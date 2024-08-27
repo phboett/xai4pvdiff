@@ -10,7 +10,8 @@ import sys
 import numpy as np
 import pandas as pd
 
-from xai_diffusion_of_innovations.preprocessing.electric_vehicles.mapping_functions import get_similarity_two_str
+from xai_diffusion_of_innovations.preprocessing.electric_vehicles \
+    import preprocess_inkar, preprocess_charging, preprocess_kba
 
 
 sys.path.append("code")
@@ -19,6 +20,24 @@ from utils.utils import col_id_ma, col_name_ma
 __intermediate_data_path = os.path.join("data", "intermediate_data", 
                                         "electric_vehicles")
 __input_for_ml_path = os.path.join("data", "input")
+
+
+def preprocess_all_data(verbose: bool = True) -> None:
+    """Preprocess all data for electric vehicles."""
+
+
+    ## Preprocess data
+    # KBA
+    _ = preprocess_kba(save_data=True, verbose=verbose)
+
+    # INKAR
+    _ = preprocess_inkar(save_data=True, verbose=verbose)
+
+
+    # Charging stations
+    _ = preprocess_charging(save_data=True, verbose=verbose)
+
+    return
 
 
 def merge_all_preprocessed_data(charging_year=2023, verbose: bool = True,
@@ -51,11 +70,12 @@ def merge_all_preprocessed_data(charging_year=2023, verbose: bool = True,
 
     
     df_complete = df_complete.merge(df_charging_cut, on=col_id_ma, how='outer')
+    
     # Fill nan with zeros
     df_complete[key_year] = df_complete[key_year].fillna(0)
 
     if save_it:
-        df_complete.to_hdf(os.path.join(__intermediate_data_path, 
-                                        "complete_data.h5"), key="df", mode="w")
+        fpath_out = __input_for_ml_path + "/e_vehicles_complete.pklz"
+        df_complete.to_pickle(fpath_out, compression="gzip")
 
     return df_complete

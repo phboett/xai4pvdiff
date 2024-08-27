@@ -111,6 +111,40 @@ def map_charging_stations_to_ars(gdf_bnetz: gpd.GeoDataFrame,
     return gdf_bnetz_internal, points_not_mapped
 
 
+def aggregate_charging_stations_different_years(gdf_mapped: gpd.GeoDataFrame,
+                                                year_range: tuple[int, int]=(1992, 2023)) -> None:
+    
+    year_range = np.arange(min(year_range), max(year_range)+1)
+
+    #list_aggregated = list()
+
+    # Shouldn't all appear in the end again? i.e. every in gdf_mapped should be back again
+
+    # initialize Dataframe
+    df_bnetz_grouped = pd.DataFrame({col_id_ma:[]}).set_index(col_id_ma)
+
+    for year_r in tqdm(year_range, desc='Aggreg. per year'):
+        # TODO date correct like this or 12, 31?
+        time_threshold = dt.datetime(year_r, 1, 1)
+
+        mask_time = gdf_mapped['Inbetriebnahme'] <= time_threshold
+        gdf_mapped_year = gdf_mapped[mask_time][[col_id_ma, 'chargingstations']]
+
+        gdf_mapped_year_sum = gdf_mapped_year.groupby(col_id_ma).agg({'chargingstations': 'sum'})
+        gdf_mapped_year_sum.rename({'chargingstations': f'chargingstations_before_{year_r}'}, 
+                                   axis=1, inplace=True)
+
+        #list_aggregated.append(gdf_mapped_year_sum)
+        
+        df_bnetz_grouped = df_bnetz_grouped.merge(gdf_mapped_year_sum, 
+                                                  how = 'outer',
+                                                  left_index=True, right_index=True)
+
+    #df_bnetz_grouped = pd.concat([list_aggregated]).groupby(col_id_ma).agg('sum')
+
+    return df_bnetz_grouped
+
+
 def preprocess_charging_stations(include_autobahn: bool = False, 
                                  save_data: bool = True,
                                  verbose: bool = False) -> None:
@@ -179,37 +213,3 @@ def preprocess_charging_stations(include_autobahn: bool = False,
         df_ars_adjusted.to_pickle(fpath_out + ".pklz", compression="gzip")
 
     return df_ars_adjusted
-
-
-def aggregate_charging_stations_different_years(gdf_mapped: gpd.GeoDataFrame,
-                                                year_range: tuple[int, int]=(1992, 2023)) -> None:
-    
-    year_range = np.arange(min(year_range), max(year_range)+1)
-
-    #list_aggregated = list()
-
-    # Shouldn't all appear in the end again? i.e. every in gdf_mapped should be back again
-
-    # initialize Dataframe
-    df_bnetz_grouped = pd.DataFrame({col_id_ma:[]}).set_index(col_id_ma)
-
-    for year_r in tqdm(year_range, desc='Aggreg. per year'):
-        # TODO date correct like this or 12, 31?
-        time_threshold = dt.datetime(year_r, 1, 1)
-
-        mask_time = gdf_mapped['Inbetriebnahme'] <= time_threshold
-        gdf_mapped_year = gdf_mapped[mask_time][[col_id_ma, 'chargingstations']]
-
-        gdf_mapped_year_sum = gdf_mapped_year.groupby(col_id_ma).agg({'chargingstations': 'sum'})
-        gdf_mapped_year_sum.rename({'chargingstations': f'chargingstations_before_{year_r}'}, 
-                                   axis=1, inplace=True)
-
-        #list_aggregated.append(gdf_mapped_year_sum)
-        
-        df_bnetz_grouped = df_bnetz_grouped.merge(gdf_mapped_year_sum, 
-                                                  how = 'outer',
-                                                  left_index=True, right_index=True)
-
-    #df_bnetz_grouped = pd.concat([list_aggregated]).groupby(col_id_ma).agg('sum')
-
-    return df_bnetz_grouped
