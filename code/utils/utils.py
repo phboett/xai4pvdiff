@@ -484,3 +484,16 @@ t1 = 2009
 t2 = 2012
 t3 = 2022
 t4 = 2023
+
+########################### Aggregation GemV ###################################
+# Features that have to be summed when aggregatinging GemV
+# Other are a population weighted average
+name_of_aggregated_sum_features = ['unemployed',
+                   'employees at place of work',
+                   'employees at place of residence',
+                   'population',
+                   'male population',
+                   'female population',
+                   'population of working age',
+                   'population (Census 2011)',
+                   'floor space']
