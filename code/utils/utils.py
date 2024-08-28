@@ -485,6 +485,10 @@ t2 = 2012
 t3 = 2022
 t4 = 2023
 
+########################### Battery Electric Vehicles specific #################
+
+col_bev_per_vehicle = 'priv. Elektro (BEV) per vehicle'
+
 ########################### Aggregation GemV ###################################
 # Features that have to be summed when aggregatinging GemV
 # Other are a population weighted average

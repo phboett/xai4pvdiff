@@ -72,13 +72,22 @@ def lasso_simulation(df, col_target_feature, train_sets, test_sets, alpha_range)
 
 if __name__ == '__main__':
 
+    number_of_input_arguments = len(sys.argv) - 1
+    if number_of_input_arguments != 1 or sys.argv[1] not in ['pv', 'bev']:
+        raise IOError('Please choose the type of target (i.e., {pv, bev}) to be run.')    
+    
+    target_type = sys.argv[1]
+
     seed = 42
     random.seed(seed)
     np.random.seed(seed)
 
     pd.options.display.float_format = '{:20,.17f}'.format
 
-    df_metadata_gbt = pd.read_csv(f'data/output/metadata_rfe.csv', sep=';')
+    fpath_gbt_results = 'data/output/metadata_rfe'
+    if target_type == 'bev':
+        fpath_gbt_results += '_bev'
+    df_metadata_gbt = pd.read_csv(fpath_gbt_results + '.csv', sep=';')
     df_metadata_gbt = prepare_metadata_dataframe(df_metadata=df_metadata_gbt,
                                                  idx_sets=[col_idx_train, col_idx_val, col_idx_test])
     df_input = pd.read_csv(df_metadata_gbt[col_file_path].unique()[0], sep=';')
@@ -109,7 +118,14 @@ if __name__ == '__main__':
     df_lasso_perf = lasso_simulation(df=df_input, col_target_feature=target_feature, train_sets=train_indices,
                                      test_sets=test_indices, alpha_range=alpha_range)
 
-    df_lasso_perf.to_csv(f'data/output/benchmarking_lasso_test.csv', sep=';', index=False,
+    fpath_out_dir = 'data/output'
+    fpath_lasso_test = fpath_out_dir + '/benchmarking_lasso_test'
+    fpath_lasso_large_alpha_test = fpath_out_dir + '/benchmarking_lasso_large_alpha_test'
+    if target_type == 'bev':
+        fpath_lasso_test += '_bev'
+        fpath_lasso_large_alpha_test += '_bev'
+
+    df_lasso_perf.to_csv(fpath_lasso_test + '.csv', sep=';', index=False,
                          float_format='{:f}'.format)
-    df_lasso_perf_large.to_csv(f'data/output/benchmarking_lasso_large_alpha_test.csv',
+    df_lasso_perf_large.to_csv(fpath_lasso_large_alpha_test + '.csv',
                                sep=';', index=False, float_format='{:f}'.format)

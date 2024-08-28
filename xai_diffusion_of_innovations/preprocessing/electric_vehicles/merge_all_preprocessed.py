@@ -74,8 +74,16 @@ def merge_all_preprocessed_data(charging_year=2023, verbose: bool = True,
     # Fill nan with zeros for the charging stations
     df_complete[key_year] = df_complete[key_year].fillna(0)
 
+    # Drop global radiation
+    df_complete.drop(columns=['global radiation'], inplace=True)
+
+    # norm vehicles with total vehicles
+    df_complete['priv. Elektro (BEV) per vehicle'] = (df_complete['priv. Elektro (BEV)'].astype(float) / 
+                                                      df_complete['priv. gesamt'].astype(float))
+    df_complete.drop(columns=['priv. Elektro (BEV)', 'priv. gesamt'], inplace=True)
+
     if save_it:
-        fpath_out = __input_for_ml_path + "/e_vehicles_complete.pklz"
-        df_complete.to_pickle(fpath_out, compression="gzip")
+        fpath_out = __input_for_ml_path + "/bev_input.csv"
+        df_complete.to_csv(fpath_out, sep=";", index=False)
 
     return df_complete

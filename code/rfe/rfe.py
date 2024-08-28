@@ -240,6 +240,12 @@ def repeat_rfe(file_path, test_size, validation_size, repetitions, param_interva
 
 if __name__ == '__main__':
 
+    number_of_input_arguments = len(sys.argv) - 1
+    if number_of_input_arguments != 1 or sys.argv[1] not in ['pv', 'bev']:
+        raise IOError('Please choose the type of target (i.e., {pv, bev}) to be run.')    
+    
+    target_type = sys.argv[1]
+
     # set random seed
     seed = 42
     random.seed(seed)
@@ -276,46 +282,66 @@ if __name__ == '__main__':
     verbose = -1
 
     # scheme to eliminate features during recursive feature elimination
-    list_feat_to_elim = 11 * [10] + 9 * [5] + 15 * [2] + 12 * [1]
+    if target_type == 'pv':
+        list_feat_to_elim = 11 * [10] + 9 * [5] + 15 * [2] + 12 * [1]
+        # file path of input data set
+        file_path = 'data/input/input.csv'
+        # file path on cluster
+        col_target = col_power_accum_pv
 
-    # file path of input data set
-    file_path = 'data/input/input.csv'
-    # file path on cluster
-    col_target = col_power_accum_pv
+    elif target_type == 'bev':
+        list_feat_to_elim = 11 * [10] + 9 * [5] + 15 * [2] + 13 * [1]
+        # file path of input data set
+        file_path = 'data/input/bev_input.csv'
+        # file path on cluster
+        col_target = col_bev_per_vehicle
 
 
     df_perf, df_metadata = repeat_rfe(file_path, validation_size, test_size, repetitions=rep,
-                                          param_intervals=param_intervals_endpoints, n_hpo_iter=n_iter,
-                                          early_stopping_rounds=early_stopping_rounds, k_splits_cv=k_splits,
-                                          elimination_scheme=list_feat_to_elim,
-                                          label_cols=[col_id_ma, col_name_ma], 
-                                          target_feat=col_target,verbose=verbose)
+                                      param_intervals=param_intervals_endpoints, n_hpo_iter=n_iter,
+                                      early_stopping_rounds=early_stopping_rounds, k_splits_cv=k_splits,
+                                      elimination_scheme=list_feat_to_elim,
+                                      label_cols=[col_id_ma, col_name_ma], 
+                                      target_feat=col_target,verbose=verbose)
     # file path on cluster
-    df_perf.to_csv(f'data/output/results_rfe.csv', index=False, sep=';')
-    df_metadata.to_csv(f'data/output/metadata_rfe.csv', index=False, sep=';')
 
-    # reset random seed as analyses of entire PV stock and of new installations in time periods was performed separately
-    seed = 42
-    random.seed(seed)
-    np.random.seed(seed)
+    out_path = 'data/output/'
+    perf_path = out_path + 'results_rfe'
+    meta_path = out_path + 'metadata_rfe'
+    if target_type == 'bev':
+        perf_path += '_bev'
+        meta_path += '_bev'
 
-    input_files = ['data/input/a_input_1991_2008.csv',
-                   'data/input/b_input_2009_2012.csv',
-                   'data/input/c_input_2012_2021.csv',
-                   'data/input/d_input_2022_2023.csv']
-    time_periods = ['a','b','c','d']
 
-    for time_period,file_path_cluster in zip(time_periods,input_files):
-        # id of run used for name of output files
 
-        df_perf, df_metadata = repeat_rfe(file_path_cluster, validation_size, test_size, repetitions=rep,
-                                              param_intervals=param_intervals_endpoints, n_hpo_iter=n_iter,
-                                              early_stopping_rounds=early_stopping_rounds, k_splits_cv=k_splits,
-                                              elimination_scheme=list_feat_to_elim,
-                                              label_cols=[col_id_ma, col_name_ma], 
-                                              target_feat=col_target,verbose=verbose)
-        # file path on cluster
-        df_perf.to_csv(f'data/output/{time_period}_results_rfe.csv', index=False, sep=';')
-        df_metadata.to_csv(f'data/output/{time_period}_metadata_rfe.csv', index=False, sep=';')
+    df_perf.to_csv(perf_path + '.csv', 
+                   index=False, sep=';')
+    df_metadata.to_csv(meta_path + '.csv', 
+                       index=False, sep=';')
+
+    if target_type == 'pv':
+        # reset random seed as analyses of entire PV stock and of new installations in time periods was performed separately
+        seed = 42
+        random.seed(seed)
+        np.random.seed(seed)
+
+        input_files = ['data/input/a_input_1991_2008.csv',
+                    'data/input/b_input_2009_2012.csv',
+                    'data/input/c_input_2012_2021.csv',
+                    'data/input/d_input_2022_2023.csv']
+        time_periods = ['a','b','c','d']
+
+        for time_period,file_path_cluster in zip(time_periods,input_files):
+            # id of run used for name of output files
+
+            df_perf, df_metadata = repeat_rfe(file_path_cluster, validation_size, test_size, repetitions=rep,
+                                                param_intervals=param_intervals_endpoints, n_hpo_iter=n_iter,
+                                                early_stopping_rounds=early_stopping_rounds, k_splits_cv=k_splits,
+                                                elimination_scheme=list_feat_to_elim,
+                                                label_cols=[col_id_ma, col_name_ma], 
+                                                target_feat=col_target,verbose=verbose)
+            # file path on cluster
+            df_perf.to_csv(f'data/output/{time_period}_results_rfe.csv', index=False, sep=';')
+            df_metadata.to_csv(f'data/output/{time_period}_metadata_rfe.csv', index=False, sep=';')
 
 
