@@ -28,14 +28,14 @@ def preprocess_all_data(verbose: bool = True) -> None:
 
     ## Preprocess data
     # KBA
-    _ = preprocess_kba(save_data=True, verbose=verbose)
+    _ = preprocess_kba.preprocess_kba(save_data=True, verbose=verbose)
 
     # INKAR
-    _ = preprocess_inkar(save_data=True, verbose=verbose)
+    _ = preprocess_inkar.preprocess_inkar(save_data=True, verbose=verbose)
 
 
     # Charging stations
-    _ = preprocess_charging(save_data=True, verbose=verbose)
+    _ = preprocess_charging.preprocess_charging_stations(save_data=True, verbose=verbose)
 
     return
 
