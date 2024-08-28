@@ -191,8 +191,8 @@ def preprocess_charging_stations(include_autobahn: bool = False,
     df_charging_stations_per_year = aggregate_charging_stations_different_years(gdf_mapped)
 
     # Add Gemeindename from file
-    df_verbund = pd.read_excel(os.path.join(__intermediate_data_path, 
-                                            "ars_gemeindeverbund.xlsx"), 
+    df_verbund = pd.read_excel(os.path.join(__raw_data_path, 
+                                            "ars_to_gemeindeverbund.xlsx"), 
                                converters={'ars': str})
     dict_ars_gemeindeverbund = {ars_value: gemeindeverbund_value for ars_value, 
                             gemeindeverbund_value in zip(df_verbund.ars, 
