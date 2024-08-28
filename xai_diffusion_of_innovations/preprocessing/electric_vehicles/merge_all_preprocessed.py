@@ -29,20 +29,22 @@ def preprocess_all_data(verbose: bool = True) -> None:
     ## Preprocess data
     # KBA
     _ = preprocess_kba.preprocess_kba(save_data=True, verbose=verbose)
+    print("Finished preprocessing KBA data.\n\n")
 
     # INKAR
     _ = preprocess_inkar.preprocess_inkar(save_data=True, verbose=verbose)
-
+    print("Finished preprocessing Inkar data.\n\n")
 
     # Charging stations
     _ = preprocess_charging.preprocess_charging_stations(save_data=True, verbose=verbose)
+    print("Finished preprocessing Charging data.\n\n")
 
     return
 
 
 def merge_all_preprocessed_data(charging_year=2023, verbose: bool = True,
                                 save_it: bool = True) -> pd.DataFrame:
-    """Merge all preprocessed data into one dataframe."""
+    """Merge all preprocessed data into one DataFrame."""
 
     ## Load preprocessed data
     df_inkar = pd.read_pickle(os.path.join(__intermediate_data_path, 

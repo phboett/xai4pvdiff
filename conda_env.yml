@@ -16,3 +16,4 @@ dependencies:
   - shap=0.45.1
   - shapely=2.0.6
   - tikzplotlib=0.10.1
+  - tqdm=4.66.5
