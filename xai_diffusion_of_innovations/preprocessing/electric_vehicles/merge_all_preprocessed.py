@@ -71,7 +71,7 @@ def merge_all_preprocessed_data(charging_year=2023, verbose: bool = True,
     
     df_complete = df_complete.merge(df_charging_cut, on=col_id_ma, how='outer')
     
-    # Fill nan with zeros
+    # Fill nan with zeros for the charging stations
     df_complete[key_year] = df_complete[key_year].fillna(0)
 
     if save_it:

@@ -26,7 +26,7 @@ __intermediate_data_path = os.path.join("data", "intermediate_data",
                                         "electric_vehicles")
 
 def preprocess_kba(save_data: bool = True,
-                   verbose: bool = False) -> pd.DataFrame:
+                   verbose: bool = False, only_raw_data: bool = False) -> pd.DataFrame:
     """Take the xls sheet of KBA where the Ars has been added.
 
     Args:
@@ -63,25 +63,17 @@ def preprocess_kba(save_data: bool = True,
                          'ars_vb', 'ars_gemeinde'], inplace=True)
 
     df_kba.insert(0, col_id_ma, ars_col)
+    if only_raw_data:
+        return df_kba
+
     cols_to_keep = [col_id_ma, "priv. gesamt", "priv. Elektro (BEV)"]
     df_kba = df_kba[cols_to_keep]
 
-    # Use Geo Data to map ARS to GemV 
-    # TODO How did you create this list? A few are missing from the shapefile
-    """
-    fpath_ars_to_gemeindeverbund = os.path.join(__intermediate_data_path, 
-                                                "ars_to_gemeindeverbund.pklz")
-    if not os.path.exists(fpath_ars_to_gemeindeverbund):
-        raise FileExistsError("The file 'ars_to_gemeindeverbund.plkz' does not exist. " +
-                              "Run the script 'preprocess_geo.py' first.")
-    else:
-        with gzip.open(fpath_ars_to_gemeindeverbund, 'rb') as fh_in:
-            dict_ars_gemeindeverbund = pickle.load(fh_in)
-    """
+    
     df_kba = df_kba.groupby(col_id_ma).agg({'priv. gesamt': 'sum',
                                             'priv. Elektro (BEV)': 'sum'}).reset_index()
     
-    # Load mapping table
+    # Load mapping table that connects ars and names
     df_verbund = pd.read_excel(os.path.join(__intermediate_data_path, 
                                             "ars_gemeindeverbund.xlsx"), 
                                converters={'ars': str})
@@ -91,9 +83,6 @@ def preprocess_kba(save_data: bool = True,
 
     
     df_kba.insert(1, col_name_ma, df_kba[col_id_ma].map(dict_ars_gemeindeverbund))
-
-    # name Jahnatal manually
-    #df_kba.at['145220275', col_name_ma] = 'Jahnatal'
 
     # Map to common ARS
     df_kba = map_to_common_ars(df_kba, "kba_mod", verbose=verbose)
