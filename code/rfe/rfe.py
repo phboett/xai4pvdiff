@@ -9,6 +9,8 @@ from sklearn.metrics import r2_score, mean_absolute_error, mean_absolute_percent
 from sklearn.model_selection import KFold, train_test_split
 import shap
 
+from tqdm import tqdm
+
 from copy import deepcopy
 
 sys.path.append('code')
@@ -166,7 +168,7 @@ def iterate_rfe(train_set_original, val_set_original, param_intervals, n_hpo_ite
 
 def repeat_rfe(file_path, test_size, validation_size, repetitions, param_intervals, n_hpo_iter,
                    early_stopping_rounds, k_splits_cv, elimination_scheme, label_cols, 
-                   target_feat, verbose):
+                   target_feat, verbose, show_progress: bool = True):
     '''
     Entire simulation run of repeated RFE on repetitions different train-test-splits of the dataset. For each choice of
     train-test-splitting, the algorithm performs RFE.
@@ -193,7 +195,7 @@ def repeat_rfe(file_path, test_size, validation_size, repetitions, param_interva
     y = data[target_feat]
     X = data.drop([target_feat] + label_cols, axis=1)
 
-    for rep in range(repetitions):
+    for rep in tqdm(range(repetitions), desc='Repetitions', disable=not show_progress):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
         X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=validation_size)
         idx_train = list(X_train.index)

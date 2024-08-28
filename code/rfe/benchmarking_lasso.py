@@ -7,13 +7,15 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
 import random
 
+from tqdm import tqdm
+
 sys.path.append('code')
 print(os.getcwd())
 from utils.utils import *
 from shap_analysis.supporting_functions import *
 os.getcwd()
 
-def lasso_simulation(df, col_target_feature, train_sets, test_sets, alpha_range):
+def lasso_simulation(df, col_target_feature, train_sets, test_sets, alpha_range, show_progress: bool = True):
     '''
     For each value of alpha contained in the list alpha_range a lasso model is trained and tested.
     @param df: dataset of input features and target feature
@@ -30,7 +32,7 @@ def lasso_simulation(df, col_target_feature, train_sets, test_sets, alpha_range)
     X = df.drop([col_id_ma, col_name_ma, col_target_feature], axis=1)
 
     df_lasso_perf = pd.DataFrame()
-    for run in train_sets:
+    for run in tqdm(train_sets, disable=not show_progress, desc="Runs"):
         print(f'run: {run}')
         X_train = X.iloc[train_sets[run], :]
         X_test = X.iloc[test_sets[run], :]
