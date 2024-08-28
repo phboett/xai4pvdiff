@@ -75,7 +75,7 @@ def preprocess_kba(save_data: bool = True,
     
     # Load mapping table that connects ars and names
     df_verbund = pd.read_excel(os.path.join(__raw_data_path, 
-                                            "ars_top_gemeindeverbund.xlsx"), 
+                                            "ars_to_gemeindeverbund.xlsx"), 
                                converters={'ars': str})
     dict_ars_gemeindeverbund = {ars_value: gemeindeverbund_value for ars_value, 
                             gemeindeverbund_value in zip(df_verbund.ars, 
