@@ -206,6 +206,7 @@ def preprocess_charging_stations(include_autobahn: bool = False,
     df_ars_adjusted = map_to_common_ars(df_charging_stations_per_year, 
                                         "charging_mod", verbose=verbose)
 
+    df_ars_adjusted = df_ars_adjusted.groupby(col_id_ma).agg('sum').reset_index()
 
     if save_data:
         fpath_out = __intermediate_data_path + '/charging_stations_per_year_ars_adjusted'
