@@ -19,7 +19,8 @@ from utils.utils import *
 os.getcwd()
 
 
-def random_search_cv(train_set, val_set, param_intervals, n_iter, early_stopping_rounds, k_splits, verbose):
+def random_search_cv(train_set, val_set, param_intervals, n_iter, 
+                     early_stopping_rounds, k_splits, verbose):
     '''
     Function performs n_iter rounds of random search for hyperparameter optimization (hpo) and returns the best model
     instance and a dataframe containing the hyperparameter values and performances of all rounds. The hyperparameters
@@ -197,7 +198,8 @@ def repeat_rfe(file_path, test_size, validation_size, repetitions, param_interva
 
     for rep in tqdm(range(repetitions), desc='Repetitions', disable=not show_progress):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
-        X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=validation_size)
+        X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, 
+                                                          test_size=validation_size)
         idx_train = list(X_train.index)
         idx_val = list(X_val.index)
         idx_test = list(X_test.index)
