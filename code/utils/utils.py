@@ -501,3 +501,13 @@ name_of_aggregated_sum_features = ['unemployed',
                    'population of working age',
                    'population (Census 2011)',
                    'floor space']
+
+########################### Drop and normalize before run #######################
+
+features_norm_drop_ls = ['male population', 'female population']
+
+features_norm_to_population_ls = ['employees at place of work',
+                         'employees at place of residence',
+                         'unemployed', 'population of working age',]
+                         
+norm_to_population_bev_ls = ['chargingstations_before_2023'] 

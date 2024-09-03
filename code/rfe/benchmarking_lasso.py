@@ -4,7 +4,8 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import Lasso 
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
+from sklearn.metrics import r2_score, mean_squared_error, \
+    mean_absolute_error, mean_absolute_percentage_error
 import random
 
 from tqdm import tqdm
@@ -15,7 +16,8 @@ from utils.utils import *
 from shap_analysis.supporting_functions import *
 os.getcwd()
 
-def lasso_simulation(df, col_target_feature, train_sets, test_sets, alpha_range, show_progress: bool = True):
+def lasso_simulation(df, col_target_feature, train_sets, test_sets, 
+                     alpha_range, show_progress: bool = True):
     '''
     For each value of alpha contained in the list alpha_range a lasso model is trained and tested.
     @param df: dataset of input features and target feature
@@ -75,10 +77,20 @@ def lasso_simulation(df, col_target_feature, train_sets, test_sets, alpha_range,
 if __name__ == '__main__':
 
     number_of_input_arguments = len(sys.argv) - 1
-    if number_of_input_arguments != 1 or sys.argv[1] not in ['pv', 'bev']:
-        raise IOError('Please choose the type of target (i.e., {pv, bev}) to be run.')    
+    if number_of_input_arguments != 2 or sys.argv[1] not in ['pv', 'bev']:
+        raise IOError('Please choose the type of target ' + 
+                      '(i.e., {pv, bev}) to be run.')    
     
     target_type = sys.argv[1]
+    if abs(float(sys.argv[2])) < 1e-3:
+        norm_ls = []
+        drop_ls = []
+    else:
+        norm_ls = features_norm_to_population_ls
+        drop_ls = features_norm_drop_ls
+
+        if target_type == 'bev':
+            norm_ls += norm_to_population_bev_ls
 
     seed = 42
     random.seed(seed)
@@ -93,6 +105,17 @@ if __name__ == '__main__':
     df_metadata_gbt = prepare_metadata_dataframe(df_metadata=df_metadata_gbt,
                                                  idx_sets=[col_idx_train, col_idx_val, col_idx_test])
     df_input = pd.read_csv(df_metadata_gbt[col_file_path].unique()[0], sep=';')
+    
+    if len(norm_ls) > 0 and len(drop_ls) > 0:
+        
+        df_input = df_input.drop(columns=drop_ls)
+
+        for feat_r in norm_ls:
+            feat_new = feat_r + '_per_capita'
+            df_input[feat_new] = df_input[feat_r] / df_input['population'].astype(float)
+            df_input.drop(columns=feat_r, 
+                          inplace=True)    
+
     target_feature = df_metadata_gbt[col_target_feat].values[0]
 
     y_pv = df_input[target_feature]
@@ -104,13 +127,18 @@ if __name__ == '__main__':
         df_input.loc[~df_input.isin([np.inf, -np.inf]).any(axis=1), 'mean distance public transport'].max()
 
     # choose values for alpha
-    alpha_range_large = 1 / np.linspace(1, 10000, num=1000, endpoint=True)
-    alpha_range = 1 / np.linspace(0.001, 50, num=1000, endpoint=True)
+    alpha_range_large = 1. / np.linspace(1, 10000, 
+                                         num=1000, endpoint=True)
+    alpha_range = 1. / np.linspace(0.001, 50, 
+                                   num=1000, endpoint=True)
 
-    train_indices = {run: df_metadata_gbt.loc[df_metadata_gbt[col_run_id] == run, col_idx_train].values[0] +
-                          df_metadata_gbt.loc[df_metadata_gbt[col_run_id] == run, col_idx_val].values[0] for run in
+    train_indices = {run: df_metadata_gbt.loc[df_metadata_gbt[col_run_id] == run, 
+                                              col_idx_train].values[0] +
+                          df_metadata_gbt.loc[df_metadata_gbt[col_run_id] == run, 
+                                              col_idx_val].values[0] for run in
                      df_metadata_gbt[col_run_id].unique()}
-    test_indices = {run: df_metadata_gbt.loc[df_metadata_gbt[col_run_id] == run, col_idx_test].values[0] for run in
+    test_indices = {run: df_metadata_gbt.loc[df_metadata_gbt[col_run_id] == run, 
+                                             col_idx_test].values[0] for run in
                     df_metadata_gbt[col_run_id].unique()}
 
     # simulation for small values of alpha, i.e., large values of inverse alpha
@@ -126,6 +154,10 @@ if __name__ == '__main__':
     if target_type == 'bev':
         fpath_lasso_test += '_bev'
         fpath_lasso_large_alpha_test += '_bev'
+
+    if norm_absolute_features:
+        fpath_lasso_test += '_norm'
+        fpath_lasso_large_alpha_test += '_norm'
 
     df_lasso_perf.to_csv(fpath_lasso_test + '.csv', sep=';', index=False,
                          float_format='{:f}'.format)

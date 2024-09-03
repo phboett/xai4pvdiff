@@ -19,6 +19,7 @@ from utils.utils import *
 os.getcwd()
 
 
+
 def random_search_cv(train_set, val_set, param_intervals, n_iter, 
                      early_stopping_rounds, k_splits, verbose):
     '''
@@ -167,9 +168,12 @@ def iterate_rfe(train_set_original, val_set_original, param_intervals, n_hpo_ite
     return df_perf
 
 
-def repeat_rfe(file_path, test_size, validation_size, repetitions, param_intervals, n_hpo_iter,
-                   early_stopping_rounds, k_splits_cv, elimination_scheme, label_cols, 
-                   target_feat, verbose, show_progress: bool = True):
+def repeat_rfe(file_path: str, test_size: float, validation_size: float, 
+               repetitions: int, param_intervals, n_hpo_iter: int,
+               early_stopping_rounds: int, k_splits_cv: int, 
+               elimination_scheme: list, label_cols: list, 
+               target_feat, verbose, show_progress: bool = True,
+               norm_ls: list = [], drop_ls: list = []):
     '''
     Entire simulation run of repeated RFE on repetitions different train-test-splits of the dataset. For each choice of
     train-test-splitting, the algorithm performs RFE.
@@ -193,10 +197,23 @@ def repeat_rfe(file_path, test_size, validation_size, repetitions, param_interva
     '''
 
     data = pd.read_csv(file_path, sep=';')
+
+    if len(drop_ls) > 0:
+        data = data.drop(columns=drop_ls)
+
+    if len(norm_ls) > 0:    
+        for feat_r in norm_ls:
+            feat_new = feat_r + '_per_capita'
+            data[feat_new] = data[feat_r] / data['population'].astype(float)
+            data.drop(columns=feat_r, 
+                        inplace=True) 
+
     y = data[target_feat]
     X = data.drop([target_feat] + label_cols, axis=1)
 
-    for rep in tqdm(range(repetitions), desc='Repetitions', disable=not show_progress):
+    for rep in tqdm(range(repetitions), 
+                    desc='Repetitions', 
+                    disable=not show_progress):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
         X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, 
                                                           test_size=validation_size)
@@ -205,6 +222,7 @@ def repeat_rfe(file_path, test_size, validation_size, repetitions, param_interva
         idx_test = list(X_test.index)
         train_set = (X_train, y_train)
         val_set = (X_val, y_val)
+
         # perform recursive feature elimination
         df_perf_run = iterate_rfe(train_set_original=train_set,
                                       val_set_original=val_set,
@@ -245,10 +263,21 @@ def repeat_rfe(file_path, test_size, validation_size, repetitions, param_interva
 if __name__ == '__main__':
 
     number_of_input_arguments = len(sys.argv) - 1
-    if number_of_input_arguments != 1 or sys.argv[1] not in ['pv', 'bev']:
+    if number_of_input_arguments != 2 or sys.argv[1] not in ['pv', 'bev']:
         raise IOError('Please choose the type of target (i.e., {pv, bev}) to be run.')    
     
     target_type = sys.argv[1]
+    if abs(float(sys.argv[2])) < 1e-3:
+        norm_ls_in = []
+        drop_ls_in = []
+    else:
+        norm_ls_in = features_norm_to_population_ls
+        drop_ls_in = features_norm_drop_ls
+
+        if target_type == 'bev':
+            norm_ls_in += features_norm_to_population_bev_ls
+
+    print(f"Starting RFE for target type: {target_type}")
 
     # set random seed
     seed = 42
@@ -294,7 +323,8 @@ if __name__ == '__main__':
         col_target = col_power_accum_pv
 
     elif target_type == 'bev':
-        list_feat_to_elim = 11 * [10] + 9 * [5] + 15 * [2] + 13 * [1]
+        #list_feat_to_elim = 11 * [10] + 9 * [5] + 15 * [2] + 13 * [1]
+        list_feat_to_elim = 11 * [10] + 9 * [5] + 14 * [2] + 15 * [1] #FIXME to get to 15 features
         # file path of input data set
         file_path = 'data/input/bev_input.csv'
         # file path on cluster
@@ -306,21 +336,25 @@ if __name__ == '__main__':
                                       early_stopping_rounds=early_stopping_rounds, k_splits_cv=k_splits,
                                       elimination_scheme=list_feat_to_elim,
                                       label_cols=[col_id_ma, col_name_ma], 
-                                      target_feat=col_target,verbose=verbose)
+                                      target_feat=col_target,verbose=verbose,
+                                      norm_ls=norm_ls_in, drop_ls=drop_ls_in)
     # file path on cluster
-
     out_path = 'data/output/'
     perf_path = out_path + 'results_rfe'
     meta_path = out_path + 'metadata_rfe'
+
+    bev_path_tmp = ''
     if target_type == 'bev':
-        perf_path += '_bev'
-        meta_path += '_bev'
+        bev_path_tmp = '_bev'
+
+    norm_path_tmp = ''
+    if len(norm_ls) > 0:
+        norm_path_tmp = '_norm'
 
 
-
-    df_perf.to_csv(perf_path + '.csv', 
+    df_perf.to_csv(perf_path + bev_path_tmp + norm_path_tmp + '.csv', 
                    index=False, sep=';')
-    df_metadata.to_csv(meta_path + '.csv', 
+    df_metadata.to_csv(meta_path + bev_path_tmp + norm_path_tmp + '.csv', 
                        index=False, sep=';')
 
     if target_type == 'pv':
@@ -339,13 +373,17 @@ if __name__ == '__main__':
             # id of run used for name of output files
 
             df_perf, df_metadata = repeat_rfe(file_path_cluster, validation_size, test_size, repetitions=rep,
-                                                param_intervals=param_intervals_endpoints, n_hpo_iter=n_iter,
-                                                early_stopping_rounds=early_stopping_rounds, k_splits_cv=k_splits,
-                                                elimination_scheme=list_feat_to_elim,
-                                                label_cols=[col_id_ma, col_name_ma], 
-                                                target_feat=col_target,verbose=verbose)
+                                              param_intervals=param_intervals_endpoints, n_hpo_iter=n_iter,
+                                              early_stopping_rounds=early_stopping_rounds, k_splits_cv=k_splits,
+                                              elimination_scheme=list_feat_to_elim,
+                                              label_cols=[col_id_ma, col_name_ma], 
+                                              target_feat=col_target,verbose=verbose,
+                                              norm_ls=norm_ls
+                                              )
             # file path on cluster
-            df_perf.to_csv(f'data/output/{time_period}_results_rfe.csv', index=False, sep=';')
-            df_metadata.to_csv(f'data/output/{time_period}_metadata_rfe.csv', index=False, sep=';')
+            df_perf.to_csv(f'data/output/{time_period}_results_rfe{norm_path_tmp}.csv', 
+                           index=False, sep=';')
+            df_metadata.to_csv(f'data/output/{time_period}_metadata_rfe{norm_path_tmp}.csv', 
+                               index=False, sep=';')
 
 
