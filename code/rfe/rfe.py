@@ -211,12 +211,17 @@ def repeat_rfe(file_path: str, test_size: float, validation_size: float,
     y = data[target_feat]
     X = data.drop([target_feat] + label_cols, axis=1)
 
+    assert sum(elimination_scheme) + 1 == len(X.columns), 'Elimination scheme suggests another number of features.'
+
     for rep in tqdm(range(repetitions), 
                     desc='Repetitions', 
                     disable=not show_progress):
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
-        X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, 
-                                                          test_size=validation_size)
+        [X_train, X_test, 
+         y_train, y_test] = train_test_split(X, y, 
+                                             test_size=test_size)
+        [X_train, X_val, 
+         y_train, y_val] = train_test_split(X_train, y_train, 
+                                            test_size=validation_size)
         idx_train = list(X_train.index)
         idx_val = list(X_val.index)
         idx_test = list(X_test.index)
@@ -225,13 +230,13 @@ def repeat_rfe(file_path: str, test_size: float, validation_size: float,
 
         # perform recursive feature elimination
         df_perf_run = iterate_rfe(train_set_original=train_set,
-                                      val_set_original=val_set,
-                                      param_intervals=param_intervals,
-                                      n_hpo_iter=n_hpo_iter,
-                                      early_stopping_rounds=early_stopping_rounds,
-                                      k_splits_cv=k_splits_cv,
-                                      elimination_scheme=elimination_scheme,
-                                      verbose = verbose)
+                                  val_set_original=val_set,
+                                  param_intervals=param_intervals,
+                                  n_hpo_iter=n_hpo_iter,
+                                  early_stopping_rounds=early_stopping_rounds,
+                                  k_splits_cv=k_splits_cv,
+                                  elimination_scheme=elimination_scheme,
+                                  verbose = verbose)
         df_perf_run['run'] = rep
 
         df_metadata_run = pd.DataFrame({
@@ -316,7 +321,8 @@ if __name__ == '__main__':
 
     # scheme to eliminate features during recursive feature elimination
     if target_type == 'pv':
-        list_feat_to_elim = 11 * [10] + 9 * [5] + 15 * [2] + 12 * [1]
+        #list_feat_to_elim = 11 * [10] + 9 * [5] + 15 * [2] + 12 * [1]
+        list_feat_to_elim = 11 * [10] + 9 * [5] + 13 * [2] + (16 - len(drop_ls_in)) * [1]
         # file path of input data set
         file_path = 'data/input/input.csv'
         # file path on cluster
@@ -324,12 +330,11 @@ if __name__ == '__main__':
 
     elif target_type == 'bev':
         #list_feat_to_elim = 11 * [10] + 9 * [5] + 15 * [2] + 13 * [1]
-        list_feat_to_elim = 11 * [10] + 9 * [5] + 14 * [2] + 15 * [1] #FIXME to get to 15 features
+        list_feat_to_elim = 11 * [10] + 9 * [5] + 13 * [2] + (17 - len(drop_ls_in)) * [1] #FIXME to get to 15 features
         # file path of input data set
         file_path = 'data/input/bev_input.csv'
         # file path on cluster
         col_target = col_bev_per_vehicle
-
 
     df_perf, df_metadata = repeat_rfe(file_path, validation_size, test_size, repetitions=rep,
                                       param_intervals=param_intervals_endpoints, n_hpo_iter=n_iter,
@@ -378,8 +383,7 @@ if __name__ == '__main__':
                                               elimination_scheme=list_feat_to_elim,
                                               label_cols=[col_id_ma, col_name_ma], 
                                               target_feat=col_target,verbose=verbose,
-                                              norm_ls=norm_ls
-                                              )
+                                              norm_ls=norm_ls_in, drop_ls=drop_ls_in)
             # file path on cluster
             df_perf.to_csv(f'data/output/{time_period}_results_rfe{norm_path_tmp}.csv', 
                            index=False, sep=';')
