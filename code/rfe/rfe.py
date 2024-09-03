@@ -348,7 +348,7 @@ if __name__ == '__main__':
         bev_path_tmp = '_bev'
 
     norm_path_tmp = ''
-    if len(norm_ls) > 0:
+    if len(norm_ls_in) > 0:
         norm_path_tmp = '_norm'
 
 

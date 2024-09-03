@@ -90,7 +90,7 @@ if __name__ == '__main__':
         drop_ls = features_norm_drop_ls
 
         if target_type == 'bev':
-            norm_ls += norm_to_population_bev_ls
+            norm_ls += features_norm_to_population_bev_ls
 
     seed = 42
     random.seed(seed)
@@ -155,7 +155,7 @@ if __name__ == '__main__':
         fpath_lasso_test += '_bev'
         fpath_lasso_large_alpha_test += '_bev'
 
-    if norm_absolute_features:
+    if len(norm_ls_in) > 0:
         fpath_lasso_test += '_norm'
         fpath_lasso_large_alpha_test += '_norm'
 
