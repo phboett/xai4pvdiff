@@ -1,8 +1,14 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*
+
 import re
 import numpy as np
 import pandas as pd
+
 import lightgbm
 import shap
+
+from tqdm import tqdm
 
 from utils.utils import *
 
@@ -11,7 +17,9 @@ def prepare_performance_dataframe(df_perf, col_features):
     @param df_perf: Dataframe giving results and performances of GBT simulation
     @param col_features: column name of column giving list of features
     @return Dataframe with transformed column of feature list'''
+
     df_perf[col_features] = df_perf[col_features].apply(lambda l: re.findall(r"'(.*?)'", l))
+
     return df_perf
 
 
@@ -26,9 +34,10 @@ def prepare_metadata_dataframe(df_metadata, idx_sets):
             lambda idx_list: [int(idx) for idx in re.findall(r'\d+', idx_list)])
     return df_metadata
 
-def get_fitted_models(df_perf, df_metadata, target_feat, feat_count_red_model=None,
-
-                     train_on_train_val=True):
+def get_fitted_models(df_perf, df_metadata, target_feat, 
+                      feat_count_red_model=None,
+                      train_on_train_val=True,
+                      show_progress=False):
     '''
     Return a dictionary of best reduced models with 'feat_count_red_model' features for all runs. Models are fitted on
     the training (and validation) data sets of the respective run.
@@ -48,7 +57,8 @@ def get_fitted_models(df_perf, df_metadata, target_feat, feat_count_red_model=No
 
     model_dict = {}
 
-    for run in df_perf[col_run_id].unique():
+    for run in tqdm(df_perf[col_run_id].unique(), disable=not show_progress, 
+                    desc="Fitting models"):
         if feat_count_red_model != None:
             df_perf_run = df_perf[(df_perf[col_run_id] == run) & (df_perf[ranking_mean_r2_desc] == 1) & (
                     df_perf[col_feature_count] == feat_count_red_model)]
@@ -60,16 +70,17 @@ def get_fitted_models(df_perf, df_metadata, target_feat, feat_count_red_model=No
         features = df_perf_run[col_features].values[0]
         param_keys = ['objective', 'n_estimators', 'num_leaves', 'min_child_samples', 'learning_rate',
                       'subsample', 'subsample_freq', 'boosting_type']
-        model = lightgbm.LGBMRegressor(**df_perf_run[param_keys].to_dict('records')[0], n_jobs=-1)
+        model = lightgbm.LGBMRegressor(**df_perf_run[param_keys].to_dict('records')[0], 
+                                       n_jobs=-1)
         if train_on_train_val:
-            model.fit(X=X.iloc[train_idx + val_idx, :][features], y=y.iloc[train_idx + val_idx], verbose=-1)
+            model.fit(X=X.iloc[train_idx + val_idx, :][features], y=y.iloc[train_idx + val_idx])
         else:
-            model.fit(X=X.iloc[train_idx, :][features], y=y.iloc[train_idx], verbose=-1)
+            model.fit(X=X.iloc[train_idx, :][features], y=y.iloc[train_idx])
         model_dict[run] = model
     return model_dict
 
 
-def get_mean_shap(model_dict, df_perf, df_metadata,feature_count_threshold):
+def get_mean_shap(model_dict, df_perf, df_metadata, feature_count_threshold):
     '''
     Get dataframe with SHAP feature importances.
     @param model_dict: dictionary of reduced model of all ten training-test-splits

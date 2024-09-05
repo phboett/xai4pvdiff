@@ -1,10 +1,11 @@
-# import re
+#!/usr/bin/env python
+# -*- coding: utf-8 -*
 
 import matplotlib.pyplot as plt
+
 import numpy as np
 import pandas as pd
-# import lightgbm
-# import shap
+
 from matplotlib.cm import ScalarMappable
 from matplotlib import ticker
 import seaborn as sns
@@ -12,7 +13,7 @@ import seaborn as sns
 from utils.utils import *
 
 def plt_performance(df_performances, perf_metric_test, perf_metric_train, list_runs, run_red_model, x_max, x_min=0, s=65, feat_count_red_model=None,
-                                   include_train_score=False,indicate_red_model=False):
+                    include_train_score=False,indicate_red_model=False):
     '''
     Function generates a matplotlib figure containing a plot of the r2-score depending on the number of features
     included in a model.
@@ -32,7 +33,9 @@ def plt_performance(df_performances, perf_metric_test, perf_metric_train, list_r
     @return: plot instance
     '''
     df_performances = df_performances[df_performances[ranking_mean_r2_desc] == 1]
+
     fig = plt.figure(figsize=(7.5,5))
+
     ax = fig.add_subplot(111)
     label_alternative_runs_test = True
     label_alternative_runs_train = True
@@ -76,6 +79,7 @@ def plt_performance(df_performances, perf_metric_test, perf_metric_train, list_r
         ax.set_ylabel('mean MAE', fontsize=fontsize_y)
     else:
         ax.set_ylabel('mean mape', fontsize=fontsize_y)
+
     ax.tick_params(labelsize=18)
     plt.yticks([0.6,0.7,0.8,0.9,1])
     ax.set_ylim((0.5,1.02))
@@ -84,11 +88,112 @@ def plt_performance(df_performances, perf_metric_test, perf_metric_train, list_r
     handles, labels = plt.gca().get_legend_handles_labels()
     order = [2,3,0,1,4]
     if perf_metric_test==mean_r2_cv_test:
-        plt.legend(handles=[handles[idx] for idx in order],labels=[labels[idx] for idx in order], loc='lower right', fontsize=16,markerscale=2)
+        plt.legend(handles=[handles[idx] for idx in order],
+                   labels=[labels[idx] for idx in order], 
+                   loc='lower right', fontsize=14,markerscale=2)
     else:
-        plt.legend(handles=[handles[idx] for idx in order],labels=[labels[idx] for idx in order],loc='upper right', fontsize=16,markerscale=2)
+        plt.legend(handles=[handles[idx] for idx in order],
+                   labels=[labels[idx] for idx in order],
+                   loc='upper right', fontsize=14,markerscale=2)
     plt.tight_layout()
-    return fig,ax
+
+    return fig, ax
+
+
+def ax_performance(ax, df_performances, perf_metric_test, perf_metric_train, 
+                   list_runs, run_red_model, x_max, x_min=0, s=65, feat_count_red_model=None,
+                   include_train_score=False,indicate_red_model=False, label_yaxis=True,
+                   show_legend=True):
+    '''
+    Function generates a matplotlib figure containing a plot of the r2-score depending on the number of features
+    included in a model. This variant just plots_it on an existing axis.
+    @param df_performances: Dataframe giving details of hpo and rfe: the hyperparameters of the models and the
+                            resulting performances (r2-score on training and test set and resulting ranking)
+    @param list_runs:
+    @param col_run:
+    @param run_red_model:
+    @param col_feature_count: (str) column name of number of features considered by model
+    @parammean_r2_cv_test: (str) column name of r2-score of test data
+    @param r2_train: (str) column name of r2-score of training data
+    @param feat_count_red_model: number of input features considered by the reduced model
+    @param include_train_score: (boolean) indicating whether diagram contains r2-scores of training data, default: False
+    @param include_all_runs: (boolean) indicating whether diagram contains r2-scores of all or only best models,
+                                default: True (all models included)
+    @param indicate_red_model: (boolean) indicating whether r2 score(s) of reduced model are indicated by marker
+    @return: plot instance
+    '''
+    
+    df_performances = df_performances[df_performances[ranking_mean_r2_desc] == 1]
+
+    label_alternative_runs_test = True
+    label_alternative_runs_train = True
+    for run in list_runs:
+        df_perf_run = df_performances[df_performances[col_run_id]==run]
+        if run==run_red_model:
+            ax.scatter(x=df_perf_run[col_feature_count], y=df_perf_run[perf_metric_test], c='tab:green', marker='.', label='test fold (selected split)', s=s)
+        else:
+            if label_alternative_runs_test:
+                ax.scatter(x=df_perf_run[col_feature_count], y=df_perf_run[perf_metric_test], c='tab:green', marker='.', label='test fold (other splits)',
+                           alpha=0.1, s=s)
+                label_alternative_runs_test = False
+            else:
+                ax.scatter(x=df_perf_run[col_feature_count], y=df_perf_run[perf_metric_test], c='tab:green', marker='.', alpha=0.1, s=s)
+
+        if include_train_score:
+            if run == run_red_model:
+                ax.scatter(x=df_perf_run[col_feature_count], y=df_perf_run[perf_metric_train], c='royalblue', marker='.', label='training folds (selected split)',
+                       s=s)
+            else:
+                if label_alternative_runs_train:
+                    ax.scatter(x=df_perf_run[col_feature_count], y=df_perf_run[perf_metric_train], c='royalblue', marker='.', label='training folds (other splits)',
+                           s=s,alpha=0.1)
+                    label_alternative_runs_train = False
+                else:
+                    ax.scatter(x=df_perf_run[col_feature_count], y=df_perf_run[perf_metric_train], c='royalblue', marker='.',s=s,alpha=0.1)
+
+    if indicate_red_model:
+        df_red_model = df_performances.loc[
+            (df_performances[ranking_mean_r2_desc] == 1) & (df_performances[col_feature_count] == feat_count_red_model) & (df_performances[col_run_id]==run_red_model)]
+        if include_train_score:
+            ax.scatter(x=df_red_model[col_feature_count], y=df_red_model[perf_metric_train], c='darkred', marker='x', s=100)
+        ax.scatter(x=df_red_model[col_feature_count], y=df_red_model[perf_metric_test], 
+                   c='darkred', marker='x',
+                   label='scores of reduced model', s=100)
+        
+    ax.axvline(x=feat_count_red_model, color='darkred', 
+               linestyle='--',linewidth=2.5)
+    ax.set_xlabel('number of features', fontsize=20,labelpad=10)
+
+    if label_yaxis:
+        fontsize_y = 20
+        if perf_metric_test==mean_r2_cv_test:
+            ax.set_ylabel(r'mean $R^2$ score', fontsize=fontsize_y,labelpad=10)
+        elif perf_metric_test==mean_mae_cv_test:
+            ax.set_ylabel('mean MAE', fontsize=fontsize_y)
+        else:
+            ax.set_ylabel('mean mape', fontsize=fontsize_y)
+
+    ax.tick_params(labelsize=18)
+    ax.set_yticks([0.6,0.7,0.8,0.9,1])
+    ax.set_ylim((0.5,1.02))
+    
+    if x_max!=None:
+        ax.set_xlim((x_min,x_max))
+    handles, labels = ax.get_legend_handles_labels()
+    order = [2,3,0,1,4]
+
+    if show_legend:
+        if perf_metric_test==mean_r2_cv_test:
+            ax.legend(handles=[handles[idx] for idx in order],
+                    labels=[labels[idx] for idx in order], 
+                    loc='lower right', fontsize=16,markerscale=2)
+        else:
+            ax.legend(handles=[handles[idx] for idx in order],
+                    labels=[labels[idx] for idx in order],
+                    loc='upper right', fontsize=16,markerscale=2)
+
+    return
+
 
 def hbar_shap_feature_imp(df_run_eval_input, features):
     '''
@@ -105,20 +210,21 @@ def hbar_shap_feature_imp(df_run_eval_input, features):
     df_run_eval = df_run_eval_input.copy()
 
     rename_tick_dict = {'employees with academic qualification': 'employees with academic\n qualification',
-                            'completed buildings with renewable heat energy systems': 'completed buildings with\n renewable heat energy systems',
-                            'completed flats with renewable heat energy systems': 'completed flats with\n renewable heat energy systems',
-                            'completed (semi-) detached houses (per capita)': 'completed (semi-) detached\n houses (per capita)',
-                            'per capita permissions for (semi-) detached houses': 'per capita permissions\n for (semi-) detached houses',
-                            'density of residents and employees': 'density of residents\n and employees',
-                            'employees with academic qualification': 'employees with\n academic qualification',
-                            'GVA per employee in secondary sector': 'GVA per employee\n in secondary sector',
-                            'German university entrance qualification (Abitur)': 'Germany university entrance\n qualification (Abitur)',
-                            'employees in knowledge-intensive industries': 'employees in\n knowledge-intensive industries',
-                            'median income (professional qualification)': 'mean income\n (professional qualification)',
-                            'share 4-person households': '4-person households',
-                            'share 5-person households': '5-person households',
-                            'CDU/CSU': 'votes CDU/CSU (conservative party)'
-                            }
+                        'completed buildings with renewable heat energy systems': 'completed buildings with\n renewable heat energy systems',
+                        'completed flats with renewable heat energy systems': 'completed flats with\n renewable heat energy systems',
+                        'completed (semi-) detached houses (per capita)': 'completed (semi-) detached\n houses (per capita)',
+                        'per capita permissions for (semi-) detached houses': 'per capita permissions\n for (semi-) detached houses',
+                        'density of residents and employees': 'density of residents\n and employees',
+                        'employees with academic qualification': 'employees with\n academic qualification',
+                        'GVA per employee in secondary sector': 'GVA per employee\n in secondary sector',
+                        'German university entrance qualification (Abitur)': 'Germany university entrance\n qualification (Abitur)',
+                        'employees in knowledge-intensive industries': 'employees in\n knowledge-intensive industries',
+                        'median income (professional qualification)': 'mean income\n (professional qualification)',
+                        'share 4-person households': '4-person households',
+                        'share 5-person households': '5-person households',
+                        'CDU/CSU': 'votes CDU/CSU (conservative party)'
+                        }
+    
     df_run_eval.rename(rename_tick_dict, axis=0, inplace=True)
     features = [rename_tick_dict[feat] if feat in rename_tick_dict else feat for feat in features]
     norm = plt.Normalize(df_run_eval.loc[features, col_occurences_feat].min(),
@@ -130,21 +236,29 @@ def hbar_shap_feature_imp(df_run_eval_input, features):
             height=df_run_eval.loc[features, col_mean_shap],
             yerr=df_run_eval.loc[features, col_std_shap],
             color=cmap(norm(df_run_eval.loc[features, col_occurences_feat])))
-    ax.set_xticks(np.arange(len(features)), labels=features, size=16)
+    ax.set_xticks(np.arange(len(features)))
+    ax.set_xticklabels(features, size=16)
     ax.set_ylabel(r'mean(SHAP feature importance)', size=18)
     ax.margins(x=0.02)
     sm = ScalarMappable(cmap=cmap, norm=plt.Normalize(df_run_eval.loc[features, col_occurences_feat].min(),df_run_eval.loc[features, col_occurences_feat].max()))
     sm.set_array([])
 
-    cbar = plt.colorbar(sm, shrink=.45, anchor=(0.9, 10), orientation="horizontal")
-    cbar.set_label('number of runs', rotation=360, labelpad=10, size=18)
+    cbar = plt.colorbar(sm, ax=ax, shrink=.45, anchor=(0.9, 10), 
+                        orientation="horizontal")
+    cbar.set_label('number of runs', rotation=360, 
+                   labelpad=10, size=18)
     cbar.ax.tick_params(labelsize=16)
+
     plt.xticks(rotation=70,ha='right')
     plt.yticks(size=16)
     plt.tight_layout()
+
     return fig, ax
 
-def bar_shap_feature_imp(df_run_eval_input, features):
+
+def bar_shap_feature_imp(df_run_eval_input, features, ax=None, 
+                         nr_features_shown=None, feature_occurence_lims=None,
+                         cmap='coolwarm', labelsize=16):
     '''
     Create bar plot of mean SHAP feature importances over all ten training-test-splitting. The color of the bars
     indicates the number of reduced models a features occurs in.
@@ -152,44 +266,64 @@ def bar_shap_feature_imp(df_run_eval_input, features):
     @param features: list of input features
     @return: figure and axis giving the plot
     '''
-    fig = plt.figure(figsize=(10, 17))
-    ax = fig.add_subplot(111)
+
+    if ax is None:
+        fig = plt.figure(figsize=(10, 17))
+        ax = fig.add_subplot(111)
 
     df_run_eval = df_run_eval_input.copy()
 
     rename_tick_dict = {'employees with academic qualification': 'employees with academic\n qualification',
-                            'completed buildings with renewable heat energy systems': 'completed buildings with\n renewable heat energy systems',
-                            'completed flats with renewable heat energy systems': 'completed flats with\n renewable heat energy systems',
-                            'completed (semi-) detached houses (per capita)': 'completed (semi-) detached\n houses (per capita)',
-                            'per capita permissions for (semi-) detached houses': 'per capita permissions\n for (semi-) detached houses',
-                            'density of residents and employees': 'density of residents\n and employees',
-                            'employees with academic qualification': 'employees with\n academic qualification',
-                            'GVA per employee in secondary sector': 'GVA per employee\n in secondary sector',
-                            'German university entrance qualification (Abitur)': 'Germany university entrance\n qualification (Abitur)',
-                            'employees in knowledge-intensive industries': 'employees in\n knowledge-intensive industries',
-                            'median income (professional qualification)': 'mean income\n (professional qualification)',
-                            'Certificates of Secondary Education (males)': 'certificates of secondary\neducation (males)',
-                            'employees without any professional qualification': 'employees without any\nprofessional qualification',
-                            'CDU/CSU': 'votes CDU/CSU (conservative party)',
-                            'other parties': 'votes other parties',
-                            'FDP': 'votes FDP',
-                            'The Left': 'votes The Left',
-                            'AfD': 'votes AfD',
-                            'The Greens': 'votes The Greens',
-                            'SPD': 'votes SPD'
-                            }
+                        'completed buildings with renewable heat energy systems': 'completed buildings with\n renewable heat energy systems',
+                        'completed flats with renewable heat energy systems': 'completed flats with\n renewable heat energy systems',
+                        'completed (semi-) detached houses (per capita)': 'completed (semi-) detached\n houses (per capita)',
+                        'per capita permissions for (semi-) detached houses': 'per capita permissions\n for (semi-) detached houses',
+                        'density of residents and employees': 'density of residents\n and employees',
+                        'employees with academic qualification': 'employees with\n academic qualification',
+                        'GVA per employee in secondary sector': 'GVA per employee\n in secondary sector',
+                        'German university entrance qualification (Abitur)': 'Germany university entrance\n qualification (Abitur)',
+                        'employees in knowledge-intensive industries': 'employees in\n knowledge-intensive industries',
+                        'median income (professional qualification)': 'mean income\n (professional qualification)',
+                        'Certificates of Secondary Education (males)': 'certificates of secondary\neducation (males)',
+                        'employees without any professional qualification': 'employees without any\nprofessional qualification',
+                        'CDU/CSU': 'votes CDU/CSU (conservative party)',
+                        'other parties': 'votes other parties',
+                        'FDP': 'votes FDP',
+                        'The Left': 'votes The Left',
+                        'AfD': 'votes AfD',
+                        'The Greens': 'votes The Greens',
+                        'SPD': 'votes SPD'}
+    
     df_run_eval.rename(rename_tick_dict, axis=0, inplace=True)
-    features = [rename_tick_dict[feat] if feat in rename_tick_dict else feat for feat in features]
-    norm = plt.Normalize(df_run_eval.loc[features, col_occurences_feat].min(),
-                         df_run_eval.loc[features, col_occurences_feat].max())
-    cmap = plt.get_cmap('coolwarm')
+    features = [rename_tick_dict[feat] 
+                if feat in rename_tick_dict else feat for feat in features]
+    
+    if feature_occurence_lims is None:
+        norm = plt.Normalize(df_run_eval.loc[features, 
+                                            col_occurences_feat].min(),
+                            df_run_eval.loc[features, 
+                                            col_occurences_feat].max())
+    else:
+        norm = plt.Normalize(min(feature_occurence_lims),
+                             max(feature_occurence_lims))
+        
+    cmap = plt.get_cmap(cmap)
+
+    if nr_features_shown is None:
+        widths = df_run_eval.loc[features, col_mean_shap]
+        xerr = df_run_eval.loc[features, col_std_shap]
+    else:
+        widths = df_run_eval.loc[features, col_mean_shap].iloc[-nr_features_shown:]
+        xerr = df_run_eval.loc[features, col_std_shap].iloc[-nr_features_shown:]
+        features = features[-nr_features_shown:]
 
     ax.barh(y=np.arange(len(features)),
-            width=df_run_eval.loc[features, col_mean_shap],
-            xerr=df_run_eval.loc[features, col_std_shap],
+            width=widths,
+            xerr=xerr,
             color=cmap(norm(df_run_eval.loc[features, col_occurences_feat])))
-    ax.set_yticks(np.arange(len(features)), labels=features, size=16)
-    ax.set_xlabel(r'mean(SHAP feature importance)', size=18)
+    ax.set_yticks(np.arange(len(features)))
+    ax.set_yticklabels(features, size=12)
+    ax.set_xlabel('mean | SHAP |', size=18)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.locator_params(axis='x', nbins=4)
@@ -199,15 +333,30 @@ def bar_shap_feature_imp(df_run_eval_input, features):
                                                       df_run_eval.loc[features, col_occurences_feat].max()))
     sm.set_array([])
 
-    cbar = plt.colorbar(sm, shrink=.45, anchor=(-1.5, 0.1))
-    cbar.set_label('number of runs', rotation=270, labelpad=25, size=18)
-    cbar.ax.tick_params(labelsize=16)
-    plt.xticks(size=16)
-    plt.tight_layout()
-    return fig, ax
+    if ax is None:
+        cbar = plt.colorbar(sm, shrink=.45, anchor=(-1.5, 0.1))
+        cbar.set_label('number of runs', rotation=270, labelpad=25, size=18)
+        cbar.ax.tick_params(labelsize=labelsize)
 
-def dependence_plot(X, shap_values, feature, interaction_feature=None, lasso_mean=None, lasso_std=None, lasso_coef=None,
-                 y_lim=None, x_lim=None, y_label=None, x_label=None, cb_label=None, title=None, scatter_color='royalblue',fig_size=(8, 5.5)):
+    ax.tick_params(labelsize=labelsize)
+    
+
+
+    if ax is None:
+        plt.tight_layout()
+        return fig, ax
+    
+    else:
+        return sm
+    
+
+def dependence_plot(X, shap_values, feature, 
+                    interaction_feature=None, lasso_mean=None, 
+                    lasso_std=None, lasso_coef=None,
+                    y_lim=None, x_lim=None, y_label=None, 
+                    x_label=None, cb_label=None, title=None, 
+                    scatter_color='royalblue',fig_size=(8, 5.5),
+                    ax=None, label_size=30, label_pad=10):
     '''
     Create SHAP dependence plot of feature. Optional colouring according to interaction_feature.
     @param X: Input dataset to get indices of features
@@ -225,24 +374,29 @@ def dependence_plot(X, shap_values, feature, interaction_feature=None, lasso_mea
     @param title: title of figure
     @param scatter_color: color of scatter plot if no interaction feature is included
     @param fig_size: size of figure
+    @param ax: (optional) axis to plot on. If 'None', a new figure will be produced.
     @return: figure and axis of plot
     '''
     # plot shap values vs feature values, coloring determined by values of interaction_feature
     feature_idx = list(X.columns).index(feature)
-    fig = plt.figure(figsize=fig_size)
-    ax = fig.add_subplot(111)
-    label_size = 30
+    if ax is None:
+        fig = plt.figure(figsize=fig_size)
+        ax = fig.add_subplot(111)
+
     label_pad = 10
     if (lasso_std != None) & (lasso_mean != None) & (lasso_coef != None):
         plt.plot(X[feature], lasso_coef * (X[feature] - lasso_mean) / lasso_std, color='darkgray', linestyle='-',
                  alpha=0.7,linewidth=2)
     if interaction_feature != None:
-        scatter = ax.scatter(x=X[feature], y=shap_values[:, feature_idx], c=X[interaction_feature], cmap='coolwarm',
+        scatter = ax.scatter(x=X[feature], y=shap_values[:, feature_idx], 
+                             c=X[interaction_feature], cmap='coolwarm',
                              s=2, alpha=1)
     else:
-        scatter = ax.scatter(x=X[feature], y=shap_values[:, feature_idx], c=scatter_color, s=2, alpha=1)
+        scatter = ax.scatter(x=X[feature], 
+                             y=shap_values[:, feature_idx], 
+                             c=scatter_color, s=2, alpha=1)
     if x_lim != None:
-        plt.xlim(x_lim)
+        ax.set_xlim(x_lim)
     if y_lim != None:
         ax.set(ylim=y_lim)
     if x_label != None:
@@ -252,15 +406,19 @@ def dependence_plot(X, shap_values, feature, interaction_feature=None, lasso_mea
     if y_label != None:
         ax.set_ylabel(y_label, fontsize=label_size, labelpad=label_pad)
     else:
-        ax.set_ylabel(f'SHAP values of\n{feature}', fontsize=label_size, labelpad=label_pad)
-    plt.xticks(size=label_size-2)
-    plt.yticks(size=label_size-2)
+        ax.set_ylabel(f'SHAP values of\n{feature}', 
+                      fontsize=label_size, labelpad=label_pad)
+        
+    ax.tick_params('both', labelsize=label_size-2)
+
     if feature=='regional potential of population':
-        plt.locator_params(axis='x', nbins=4)
+        ax.locator_params(axis='x', nbins=4)
     else:
-        plt.locator_params(axis='both', nbins=6)
+        ax.locator_params(axis='both', nbins=6)
+
     if title != None:
-        plt.title(title, fontsize=label_size+2)
+        ax.title(title, fontsize=label_size+2)
+
     if interaction_feature != None:
         cbar = plt.colorbar(scatter)
         if cb_label!=None:
@@ -270,7 +428,12 @@ def dependence_plot(X, shap_values, feature, interaction_feature=None, lasso_mea
         cbar.ax.tick_params(labelsize=label_size-2)
         tick_locator = ticker.MaxNLocator(nbins=5)
         cbar.locator = tick_locator
-    return fig, ax
+    
+    if ax is None:    
+        return fig, ax
+    else:
+        return
+    
 
 def heatmap_interactions(X, interaction_values, feature_name_dict=None, zero_main_effect=True):
     '''
