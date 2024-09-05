@@ -322,7 +322,7 @@ if __name__ == '__main__':
     # scheme to eliminate features during recursive feature elimination
     if target_type == 'pv':
         #list_feat_to_elim = 11 * [10] + 9 * [5] + 15 * [2] + 12 * [1]
-        list_feat_to_elim = 11 * [10] + 9 * [5] + 13 * [2] + (16 - len(drop_ls_in)) * [1]
+        list_feat_to_elim = 11 * [10] + 9 * [5] + 12 * [2] + (18 - len(drop_ls_in)) * [1]
         # file path of input data set
         file_path = 'data/input/input.csv'
         # file path on cluster
@@ -330,7 +330,7 @@ if __name__ == '__main__':
 
     elif target_type == 'bev':
         #list_feat_to_elim = 11 * [10] + 9 * [5] + 15 * [2] + 13 * [1]
-        list_feat_to_elim = 11 * [10] + 9 * [5] + 13 * [2] + (17 - len(drop_ls_in)) * [1] #FIXME to get to 15 features
+        list_feat_to_elim = 11 * [10] + 9 * [5] + 12 * [2] + (19 - len(drop_ls_in)) * [1] #FIXME to get to 15 features
         # file path of input data set
         file_path = 'data/input/bev_input.csv'
         # file path on cluster
