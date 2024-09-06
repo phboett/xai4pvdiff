@@ -76,7 +76,8 @@ def random_search_cv(train_set, val_set, param_intervals, n_iter,
         for train_idx, test_idx in kf.split(train_set[0]):
             model = LGBMRegressor(**params, n_jobs=-1)
             model.fit(X_train.iloc[train_idx, :], y_train.iloc[train_idx], eval_set=val_set,
-                      early_stopping_rounds=early_stopping_rounds)
+                      early_stopping_rounds=early_stopping_rounds,
+                      verbosity=verbose)
             y_pred_train = model.predict(X_train.iloc[train_idx, :])
             y_pred_test = model.predict(X_train.iloc[test_idx, :])
             r2_train.append(r2_score(y_true=y_train.iloc[train_idx], y_pred=y_pred_train))
@@ -89,7 +90,8 @@ def random_search_cv(train_set, val_set, param_intervals, n_iter,
         # retrain model on entire training set and perform early stopping on the validation set to determine n_estimators
         model = LGBMRegressor(**params, n_jobs=-1)
         model.fit(X_train, y_train, eval_set=val_set, 
-                  early_stopping_rounds=early_stopping_rounds)
+                  early_stopping_rounds=early_stopping_rounds, 
+                  verbosity=verbose)
         params.update({
                 'n_estimators': model.best_iteration_,
                 mean_r2_cv_train: np.mean(r2_train),
@@ -105,7 +107,8 @@ def random_search_cv(train_set, val_set, param_intervals, n_iter,
     df_performances.loc[df_performances[ranking_mean_r2_desc] == 1, list(param_intervals.keys())].to_dict(
         'records')[0]
     best_model = LGBMRegressor(**best_param, n_jobs=-1)
-    best_model.fit(X_train, y_train)
+    best_model.fit(X_train, y_train, verbosity=verbose)
+
     return best_model, df_performances
 
 
