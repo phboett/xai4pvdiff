@@ -435,7 +435,11 @@ def dependence_plot(X, shap_values, feature,
         return
     
 
-def heatmap_interactions(X, interaction_values, feature_name_dict=None, zero_main_effect=True):
+def heatmap_interactions(X, interaction_values, feature_name_dict: dict  = None, 
+                         zero_main_effect: bool = True, 
+                         ax: plt.axes = None, fontsize: float = 15., 
+                         plot_cbar: bool = True, cmap: str='plasma', vlims: tuple = None,
+                         remove_diagonal: bool = False): 
     '''
     Create heat map of SHAP interaction values.
     @param X: Input data
@@ -446,28 +450,54 @@ def heatmap_interactions(X, interaction_values, feature_name_dict=None, zero_mai
     '''
     features = list(X.columns)
     if feature_name_dict != None:
-        features_renamed = [feature_name_dict[feature] if feature in feature_name_dict else feature for feature in
+        features_renamed = [feature_name_dict[feature] if feature in feature_name_dict 
+                            else feature for feature in
                             features]
     else:
         features_renamed = features
+
     mean_interactions = abs(interaction_values).mean(axis=0)
+
+    if remove_diagonal:
+        []
+
     if zero_main_effect:
         mean_interactions[np.arange(len(features_renamed)), np.arange(len(features))] = 0
-    fig = plt.figure(figsize=(12, 10))
-    ax = sns.heatmap(np.flip(mean_interactions), linewidths=0.2, cmap='coolwarm')
-    fontsize = 15
+
+    kwargs = dict(cmap=cmap, cbar=plot_cbar, linewidths=0.2)
+    if vlims is not None:
+        kwargs['vmin'] = min(vlims)
+        kwargs['vmax'] = max(vlims)
+
+    if ax is None:
+        fig = plt.figure(figsize=(12, 10))
+        ax = sns.heatmap(np.flip(mean_interactions), **kwargs)
+
+    else:
+        sns.heatmap(np.flip(mean_interactions), ax=ax, **kwargs)
+
     ax.xaxis.tick_top()
+
     ax.set_xticklabels(features_renamed[::-1], rotation=90, size=fontsize)
     ax.set_yticklabels(features_renamed[::-1], size=fontsize)
-    cb_ax = ax.figure.axes[-1]
-    cb_ax.tick_params(labelsize=16)
-    cb_ax.set_ylabel('mean(|interaction value|)', fontsize=20)
-    plt.yticks(rotation=0)
+
+    if plot_cbar:
+        cb_ax = ax.figure.axes[-1]
+        cb_ax.tick_params(labelsize=16)
+        cb_ax.set_ylabel('mean(|interaction value|)', fontsize=20)
+
+    ax.tick_params('y', rotation=0)
+
     plt.tight_layout()
-    return fig, ax
+
+    if ax is None:
+        return fig, ax
+    else:
+        return
+    
 
 def dependence_plot_main_effect(X, shap_values, feature, plot_main_effect=False, y_lim=None, x_lim=None, y_label=None,
-                             x_label=None, fig_size=(5,4), font_size = 12, tick_size = 12):
+                             x_label=None, fig_size=(5,4), font_size = 12, tick_size = 12, ax=None):
     '''
     Scatter plot of SHAP values or main effects of SHAP values.
     @param X: input data, used to collect indices of features
@@ -481,25 +511,34 @@ def dependence_plot_main_effect(X, shap_values, feature, plot_main_effect=False,
         shap_to_plot = shap_values[:,feature_idx,feature_idx]
     else:
         shap_to_plot = shap_values[:,feature_idx]
-    fig = plt.figure(figsize=fig_size)
-    ax = fig.add_subplot(111)
-    scatter = ax.scatter(x=X[feature], y=shap_to_plot, c='silver', s=1, alpha=0.5)
+
+    if ax is None:
+        fig = plt.figure(figsize=fig_size)
+        ax = fig.add_subplot(111)
+    
+    ax.scatter(x=X[feature], y=shap_to_plot, c='silver', s=1, alpha=0.5)
+
     if x_lim != None:
-        plt.xlim(x_lim)
+        ax.set_xlim(x_lim)
     if y_lim != None:
         ax.set(ylim=y_lim)
     if x_label != None:
         ax.set_xlabel(x_label, fontsize=font_size)
     else:
         ax.set_xlabel(feature, fontsize=font_size)
+    
     ax.set_title(y_label, fontsize=font_size+1)
 
-    plt.xticks(size=tick_size)
-    plt.yticks(size=tick_size)
-    plt.locator_params(axis='both', nbins=6)
+    ax.tick_params('both', size=tick_size)
 
-    plt.tight_layout()
-    return fig, ax
+    ax.locator_params(axis='both', nbins=6)
+
+    if ax is None:
+        plt.tight_layout()
+
+        return fig, ax
+    else:
+        return
 
 def dependence_plot_interactions(X, interaction_vals, feature, interaction_feature, ax, x_label=None, y_label=None,
                              cb_label=None, x_lim=None, y_lim=None, y_ticks=False, title=None, font_size=12, tick_size = 12):

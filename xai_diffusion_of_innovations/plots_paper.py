@@ -13,6 +13,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from PIL import Image
 
+plt.rcParams.update({'text.usetex': True})
+
 import shap
 
 import pickle
@@ -50,16 +52,16 @@ rename_tick_dict = {'employees with academic qualification': 'employees with aca
                         'median income (professional qualification)': 'mean income\n (professional qualification)',
                         'Certificates of Secondary Education (males)': 'certificates of secondary\neducation (males)',
                         'employees without any professional qualification': 'employees without any\nprofessional qualification',
-                        'CDU/CSU': 'votes CDU/CSU [%]',
-                        'other parties': 'votes other parties [%]',
-                        'FDP': 'votes FDP [%]',
-                        'The Left': 'votes The Left [%]',
-                        'AfD': 'votes AfD [%]',
-                        'The Greens': 'votes The Greens [%]',
-                        'SPD': 'votes SPD [%]',
-                        'share 4-person households': 'share of\n4-person households [%]',
-                        'share 5-person households': 'share of\n5-person households [%]',
-                        'flats with 5+ rooms': 'share of\nflats with 5+ rooms [%]',
+                        'CDU/CSU': 'votes CDU/CSU [\%]',
+                        'other parties': 'votes other parties [\%]',
+                        'FDP': 'votes FDP [\%]',
+                        'The Left': 'votes The Left [\%]',
+                        'AfD': 'votes AfD [\%]',
+                        'The Greens': 'votes The Greens [\%]',
+                        'SPD': 'votes SPD [\%]',
+                        'share 4-person households': 'share of\n4-person households [\%]',
+                        'share 5-person households': 'share of\n5-person households [\%]',
+                        'flats with 5+ rooms': 'share of\nflats with 5+ rooms [\%]',
                         col_power_accum_pv: 'photovoltaic power [kW p.h.]',
                         'global radiation': 'global radiation [kWh/m²]',
                         'income tax': 'income tax [€ p.c.]',}
@@ -151,12 +153,17 @@ def plot_map_distribution_pv_and_bev(save_fig=False):
     """Plot the final"""
 
     # Plot
-    fig, [ax_pv, ax_bev] = plt.subplots(1, 2, figsize=(12, 6))
+    fig, [ax_pv, ax_bev] = plt.subplots(1, 2, figsize=(8, 10))
 
 
     # Load dataset
+    df_data_pv = pd.read_csv("data/input/input.csv", sep=';')
+    df_data_bev = pd.read_csv("data/input/bev_input.csv", sep=';')
 
     # Load dictionary connecting ars to wkt coordinates
+    df_bund = pd.read_csv("data/input/bundeslaender.csv", sep=';')
+    dict_ars_wkt = {ars_r: wkt_r for ars_r, wkt_r in zip(df_bund.ARS, df_bund.WKT)}
+    gdf = gpd.GeoDataFrame(df_bund, geometry="wkt").to_epsg()
 
     ## Plot PV
 
@@ -166,6 +173,18 @@ def plot_map_distribution_pv_and_bev(save_fig=False):
 
     # Aesthetics
 
+
+    # Add cartoons
+    pv_image = Image.open(f"{__cartoon_path}/pv.png")
+    ax_pv_image = fig.add_axes([0.3, .825, 0.17, 0.17])
+    ax_pv_image.imshow(pv_image)
+    ax_pv_image.axis('off')
+
+
+    car_image = Image.open(f"{__cartoon_path}/car.png")
+    ax_car_image = fig.add_axes([0.8, .825, 0.15, 0.15])
+    ax_car_image.imshow(car_image)
+    ax_car_image.axis('off')
 
     if save_fig:
         fig_path = "plots/map_distribution_pv_and_bev.pdf"
@@ -355,11 +374,7 @@ def plot_mean_shap_features(df_mean_shap_pv,
     return
 
 
-def plot_dependency_pv_and_bev(feature_count_threshold_pv=15,
-                              feature_count_threshold_bev=16, 
-                              save_fig=False, nr_best_features=4,
-                              run_evaluation=False):
-    """Plot 2 by 4 with depency plot in the best model."""
+def get_reduced_model_features_n_shap(feature_count_threshold_pv, feature_count_threshold_bev, run_evaluation=False):
 
     fpath_plot_data = "data/intermediate_data/dependency_plots_pv_and_bev.pklz"
 
@@ -384,7 +399,7 @@ def plot_dependency_pv_and_bev(feature_count_threshold_pv=15,
                                                                                 feature_count_threshold_pv, col_power_accum_pv)
 
         [X_red_model_pv, _, 
-        shap_values_pv, _] = get_details_about_best_model(df_perf_pv, df_metadata_pv, model_dict_pv, 
+        shap_values_pv, interaction_values_pv] = get_details_about_best_model(df_perf_pv, df_metadata_pv, model_dict_pv, 
                                                                                     split_id_best_model, feature_count_threshold_pv)
 
         
@@ -405,20 +420,34 @@ def plot_dependency_pv_and_bev(feature_count_threshold_pv=15,
                                                                                 feature_count_threshold_bev, col_bev_per_vehicle)
 
         [X_red_model_bev, _, 
-        shap_values_bev, _] = get_details_about_best_model(df_perf_bev, df_metadata_bev, model_dict_bev, 
+        shap_values_bev, interaction_values_bev] = get_details_about_best_model(df_perf_bev, df_metadata_bev, model_dict_bev, 
                                                                                     split_id_best_model, feature_count_threshold_bev)
 
-        res_tup = (X_red_model_pv, shap_values_pv, df_mean_shap_pv,
-                   X_red_model_bev, shap_values_bev, df_mean_shap_bev)
+        res_tup = (X_red_model_pv, shap_values_pv, df_mean_shap_pv, interaction_values_pv,
+                   X_red_model_bev, shap_values_bev, df_mean_shap_bev, interaction_values_bev)
         
         with gzip.open(fpath_plot_data, "wb") as fh_plot_data:
             pickle.dump(res_tup, fh_plot_data)
     
     else:
         with gzip.open(fpath_plot_data, "rb") as fh_plot_data:
-            (X_red_model_pv, shap_values_pv, df_mean_shap_pv,
-            X_red_model_bev, shap_values_bev, df_mean_shap_bev) = pickle.load(fh_plot_data)
+            (X_red_model_pv, shap_values_pv, df_mean_shap_pv, interaction_values_pv,
+             X_red_model_bev, shap_values_bev, df_mean_shap_bev, interaction_values_bev) = pickle.load(fh_plot_data)
 
+    return [X_red_model_pv, shap_values_pv, df_mean_shap_pv, interaction_values_pv,
+            X_red_model_bev, shap_values_bev, df_mean_shap_bev, interaction_values_bev]
+
+
+def plot_dependency_pv_and_bev(feature_count_threshold_pv=15,
+                              feature_count_threshold_bev=16, 
+                              save_fig=False, nr_best_features=4,
+                              run_evaluation=False):
+    """Plot 2 by 4 with depency plot in the best model."""
+
+    [X_red_model_pv, shap_values_pv, df_mean_shap_pv, _,
+    X_red_model_bev, shap_values_bev, df_mean_shap_bev, _] = get_reduced_model_features_n_shap(feature_count_threshold_pv, 
+                                                                                            feature_count_threshold_bev, 
+                                                                                            run_evaluation)
 
     # Plot
     fig, [ax_pv, ax_bev] = plt.subplots(2, nr_best_features, 
@@ -511,67 +540,15 @@ def plot_dependency_pv_and_bev(feature_count_threshold_pv=15,
 def plot_all_dependencies_separate(feature_count_threshold_pv=15,
                                    feature_count_threshold_bev=16,
                                    save_fig=False, run_evaluation=False,
-                                   labelsize=14):
+                                   labelsize=16):
     """Plot shap values over the feature values for all features of the best number."""
 
-    fpath_plot_data = "data/intermediate_data/dependency_plots_pv_and_bev.pklz"
 
-    if not os.path.exists(fpath_plot_data) or run_evaluation: 
-        [df_perf_pv, df_perf_bev, 
-        df_metadata_pv, df_metadata_bev] = load_performance_and_metadata_dataframes()
-        
-        ## PV
-        df_perf_all_split_pv = df_perf_pv.loc[
-        (df_perf_pv[col_feature_count] == feature_count_threshold_pv)
-        & (df_perf_pv[ranking_mean_r2_desc] == 1),
-        [col_run_id, mean_r2_cv_test],
-        ]
-        split_id_best_model = df_perf_all_split_pv.loc[
-            df_perf_all_split_pv[mean_r2_cv_test] == df_perf_all_split_pv[mean_r2_cv_test].max(),
-            col_run_id,
-        ].values[0]
-        print("The id of train-test split with best performance for PV: ", 
-            split_id_best_model)
-
-        model_dict_pv, df_mean_shap_pv = get_fitted_models_and_mean_shap_values(df_perf_pv, df_metadata_pv,
-                                                                                feature_count_threshold_pv, col_power_accum_pv)
-
-        [X_red_model_pv, _, 
-        shap_values_pv, _] = get_details_about_best_model(df_perf_pv, df_metadata_pv, model_dict_pv, 
-                                                                                    split_id_best_model, feature_count_threshold_pv)
-
-        
-        ## BEV
-        df_perf_all_split_bev = df_perf_bev.loc[
-        (df_perf_bev[col_feature_count] == feature_count_threshold_bev)
-        & (df_perf_bev[ranking_mean_r2_desc] == 1),
-        [col_run_id, mean_r2_cv_test],
-        ]
-        split_id_best_model = df_perf_all_split_bev.loc[
-            df_perf_all_split_bev[mean_r2_cv_test] == df_perf_all_split_bev[mean_r2_cv_test].max(),
-            col_run_id,
-        ].values[0]
-        print("The id of train-test split with best performance for bev: ", 
-            split_id_best_model)
-
-        model_dict_bev, df_mean_shap_bev = get_fitted_models_and_mean_shap_values(df_perf_bev, df_metadata_bev,
-                                                                                feature_count_threshold_bev, col_bev_per_vehicle)
-
-        [X_red_model_bev, _, 
-        shap_values_bev, _] = get_details_about_best_model(df_perf_bev, df_metadata_bev, model_dict_bev, 
-                                                                                    split_id_best_model, feature_count_threshold_bev)
-
-        res_tup = (X_red_model_pv, shap_values_pv, df_mean_shap_pv,
-                   X_red_model_bev, shap_values_bev, df_mean_shap_bev)
-        
-        with gzip.open(fpath_plot_data, "wb") as fh_plot_data:
-            pickle.dump(res_tup, fh_plot_data)
+    [X_red_model_pv, shap_values_pv, _, _,
+    X_red_model_bev, shap_values_bev, _, _] = get_reduced_model_features_n_shap(feature_count_threshold_pv, 
+                                                                                            feature_count_threshold_bev, 
+                                                                                            run_evaluation)
     
-    else:
-        with gzip.open(fpath_plot_data, "rb") as fh_plot_data:
-            (X_red_model_pv, shap_values_pv, df_mean_shap_pv,
-            X_red_model_bev, shap_values_bev, df_mean_shap_bev) = pickle.load(fh_plot_data)
-
     # Plot
     ## PV
     mean_shap_red_pv = np.mean(abs(shap_values_pv), axis=0)
@@ -636,11 +613,11 @@ def plot_all_dependencies_separate(feature_count_threshold_pv=15,
         ax_r.set_ylabel("SHAP", size=labelsize)
 
     fig_pv.tight_layout()
-    fig_pv.subplots_adjust(hspace=.4, right=0.925)
+    fig_pv.subplots_adjust(hspace=.5, right=0.925)
     fig_pv.canvas.manager.set_window_title("Feature depence plots for PV")
 
     fig_bev.tight_layout()
-    fig_bev.subplots_adjust(hspace=.4, right=0.925)
+    fig_bev.subplots_adjust(hspace=.5, right=0.925)
     fig_bev.canvas.manager.set_window_title("Feature depence plots for BEV")
 
     # Add cartoons
@@ -651,7 +628,7 @@ def plot_all_dependencies_separate(feature_count_threshold_pv=15,
 
 
     car_image = Image.open(f"{__cartoon_path}/car.png")
-    ax_car_image = fig_bev.add_axes([0.89, .9, 0.1, 0.1])
+    ax_car_image = fig_bev.add_axes([0.89, .89, 0.105, 0.105])
     ax_car_image.imshow(car_image)
     ax_car_image.axis('off')
 
@@ -670,5 +647,119 @@ def plot_all_dependencies_separate(feature_count_threshold_pv=15,
 
     else:
         plt.show()
+
+    return
+
+def interaction_heatmaps_pv_and_bev(feature_count_threshold_pv=15, 
+                                    feature_count_threshold_bev=16, 
+                                    save_fig=False, run_evaluation=False, ):
+
+
+    # Load data
+
+    [X_red_model_pv, shap_values_pv, df_mean_shap_pv, interaction_values_pv,
+     X_red_model_bev, shap_values_bev, df_mean_shap_bev, interaction_values_bev] = get_reduced_model_features_n_shap(feature_count_threshold_pv, 
+                                                                                            feature_count_threshold_bev, 
+                                                                                            run_evaluation)
+    
+    mean_pv_interactions = np.mean(abs(interaction_values_pv), axis=0)
+    mean_bev_interactions = np.mean(abs(interaction_values_bev), axis=0)
+
+    # Plot
+    fig, [ax_pv, ax_bev] = plt.subplots(1, 2, figsize=(30, 10))
+
+    plotting.heatmap_interactions(X_red_model_pv, interaction_values_pv, ax=ax_pv, 
+                                  feature_name_dict=rename_tick_dict, plot_cbar=True,
+                                  fontsize=13, remove_diagonal=True)
+    
+    plotting.heatmap_interactions(X_red_model_bev, interaction_values_bev, ax=ax_bev,
+                                  feature_name_dict=rename_tick_dict, plot_cbar=True,
+                                  fontsize=13, remove_diagonal=True)
+
+    # Remove the diagonal
+
+    fig.tight_layout()    
+
+    # Add cartoons
+    pv_image = Image.open(f"{__cartoon_path}/pv.png")
+    ax_pv_image = fig.add_axes([0.3, .75, 0.3, 0.3])
+    ax_pv_image.imshow(pv_image)
+    ax_pv_image.axis('off')
+
+    car_image = Image.open(f"{__cartoon_path}/car.png")
+    ax_car_image = fig.add_axes([0.8875, .8, 0.16, 0.16])
+    ax_car_image.imshow(car_image)
+    ax_car_image.axis('off')
+
+    fig.subplots_adjust(right=0.95, wspace=.275)
+    if save_fig:
+        fig_path = "plots/interaction_heatmaps_pv_and_bev.pdf"
+        fig.savefig(fig_path, bbox_inches='tight')
+
+        fig.clear()
+        plt.close(fig)
+
+    else:
+        plt.show()
+
+
+    return ax_pv, interaction_values_pv
+
+def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False, 
+                                                 run_evaluation: bool = False, 
+                                                 feature_count_threshold_pv: int = 15, 
+                                                 feature_count_threshold_bev: int = 16,
+                                                 target_type: str = 'pv'):
+    """Plot the """
+
+    [X_red_model_pv, shap_values_pv, 
+     df_mean_shap_pv, interaction_values_pv,
+     X_red_model_bev, shap_values_bev, 
+     df_mean_shap_bev, 
+     interaction_values_bev] = get_reduced_model_features_n_shap(feature_count_threshold_pv, 
+                                                                                                                     feature_count_threshold_bev, 
+                                                                                                                     run_evaluation)
+    
+    if target_type == 'pv':
+        X_red_model = X_red_model_pv
+        interaction_values = interaction_values_pv
+        shap_values = shap_values_pv
+
+        feature = "share 4-person households"
+
+    elif target_type == 'bev':
+        X_red_model = X_red_model_bev
+        interaction_values = interaction_values_bev
+        shap_values = shap_values_bev
+
+        feature = "income tax"
+
+    else:
+        raise ValueError("Please choose the target type to be either 'pv' or 'bev'.")
+
+    # Plot
+    fig, [ax_tot, ax_main, ax_inter1, ax_inter2] = plt.subplots(1, 4, figsize=(20, 4))
+
+    plotting.dependence_plot_main_effect(X=X_red_model,
+                                         shap_values=shap_values,
+                                         feature=feature,
+                                         plot_main_effect=False,
+                                         x_lim=None, ax=ax_tot)
+
+    #plotting.depencence_plot_main_effect()
+
+    #plotting.depencence_plot_interactions()
+
+    #plotting.depencence_plot_interactions()
+
+    if save_fig:
+        fig_path = "plots/decomposed_shap_interactions_pv_and_bev.pdf"
+        fig.savefig(fig_path, bbox_inches='tight')
+
+        fig.clear()
+        plt.close(fig)
+    else:
+        plt.show()
+
 
     return
