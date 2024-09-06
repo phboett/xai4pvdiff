@@ -13,6 +13,9 @@ from tqdm import tqdm
 
 from copy import deepcopy
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 sys.path.append('code')
 print(os.getcwd())
 from utils.utils import *
@@ -74,10 +77,9 @@ def random_search_cv(train_set, val_set, param_intervals, n_iter,
         mape_test = []
         # k-fold cross-validation
         for train_idx, test_idx in kf.split(train_set[0]):
-            model = LGBMRegressor(**params, n_jobs=-1)
+            model = LGBMRegressor(**params, n_jobs=-1, verbosity=verbose)
             model.fit(X_train.iloc[train_idx, :], y_train.iloc[train_idx], eval_set=val_set,
-                      early_stopping_rounds=early_stopping_rounds,
-                      verbosity=verbose)
+                      early_stopping_rounds=early_stopping_rounds, verbose=verbose > 0)
             y_pred_train = model.predict(X_train.iloc[train_idx, :])
             y_pred_test = model.predict(X_train.iloc[test_idx, :])
             r2_train.append(r2_score(y_true=y_train.iloc[train_idx], y_pred=y_pred_train))
@@ -88,10 +90,9 @@ def random_search_cv(train_set, val_set, param_intervals, n_iter,
             mape_test.append(mean_absolute_percentage_error(y_true=y_train.iloc[test_idx], y_pred=y_pred_test))
 
         # retrain model on entire training set and perform early stopping on the validation set to determine n_estimators
-        model = LGBMRegressor(**params, n_jobs=-1)
+        model = LGBMRegressor(**params, n_jobs=-1, verbosity=verbose)
         model.fit(X_train, y_train, eval_set=val_set, 
-                  early_stopping_rounds=early_stopping_rounds, 
-                  verbosity=verbose)
+                  early_stopping_rounds=early_stopping_rounds, verbose=verbose > 0)
         params.update({
                 'n_estimators': model.best_iteration_,
                 mean_r2_cv_train: np.mean(r2_train),
@@ -106,8 +107,9 @@ def random_search_cv(train_set, val_set, param_intervals, n_iter,
     best_param = \
     df_performances.loc[df_performances[ranking_mean_r2_desc] == 1, list(param_intervals.keys())].to_dict(
         'records')[0]
-    best_model = LGBMRegressor(**best_param, n_jobs=-1)
-    best_model.fit(X_train, y_train, verbosity=verbose)
+    best_model = LGBMRegressor(**best_param, n_jobs=-1, 
+                               verbosity=verbose)
+    best_model.fit(X_train, y_train, verbose=verbose > 0)
 
     return best_model, df_performances
 
