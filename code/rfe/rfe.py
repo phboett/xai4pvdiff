@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import random
 
-from lightgbm import LGBMRegressor, early_stopping
+from lightgbm import LGBMRegressor
 from sklearn.metrics import r2_score, mean_absolute_error, mean_absolute_percentage_error
 from sklearn.model_selection import KFold, train_test_split
 import shap
@@ -79,7 +79,7 @@ def random_search_cv(train_set, val_set, param_intervals, n_iter,
         for train_idx, test_idx in kf.split(train_set[0]):
             model = LGBMRegressor(**params, n_jobs=-1, verbosity=verbose)
             model.fit(X_train.iloc[train_idx, :], y_train.iloc[train_idx], eval_set=val_set,
-                      callbacks=[early_stopping(stopping_rounds=early_stopping_rounds)])
+                      early_stopping_rounds=early_stopping_rounds, verbose=verbose > 0)
             y_pred_train = model.predict(X_train.iloc[train_idx, :])
             y_pred_test = model.predict(X_train.iloc[test_idx, :])
             r2_train.append(r2_score(y_true=y_train.iloc[train_idx], y_pred=y_pred_train))
@@ -92,7 +92,7 @@ def random_search_cv(train_set, val_set, param_intervals, n_iter,
         # retrain model on entire training set and perform early stopping on the validation set to determine n_estimators
         model = LGBMRegressor(**params, n_jobs=-1, verbosity=verbose)
         model.fit(X_train, y_train, eval_set=val_set, 
-                  callbacks=[early_stopping(stopping_rounds=early_stopping_rounds)])
+                  early_stopping_rounds=early_stopping_rounds, verbose=verbose > 0)
         params.update({
                 'n_estimators': model.best_iteration_,
                 mean_r2_cv_train: np.mean(r2_train),
@@ -109,7 +109,7 @@ def random_search_cv(train_set, val_set, param_intervals, n_iter,
         'records')[0]
     best_model = LGBMRegressor(**best_param, n_jobs=-1, 
                                verbosity=verbose)
-    best_model.fit(X_train, y_train)
+    best_model.fit(X_train, y_train, verbose=verbose > 0)
 
     return best_model, df_performances
 
