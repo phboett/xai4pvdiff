@@ -39,7 +39,7 @@ def preprocess_kba(save_data: bool = True,
 
     # Load data where the ARS has been added
     df_kba = pd.read_excel(os.path.join(__raw_data_path, 'kba',
-                                        'fz27_202404_with_ars.xlsx'), 
+                                        'fz27_202301_with_ars.xlsx'), 
                                         header=0, 
                            sheet_name='processed', dtype={'ars_land': str, 
                                                           'ars_rb': str, 
