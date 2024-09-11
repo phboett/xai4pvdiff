@@ -37,7 +37,7 @@ def prepare_metadata_dataframe(df_metadata, idx_sets):
 def get_fitted_models(df_perf, df_metadata, target_feat, 
                       feat_count_red_model=None,
                       train_on_train_val=True,
-                      show_progress=False):
+                      show_progress=False, use_normalized: bool = True):
     '''
     Return a dictionary of best reduced models with 'feat_count_red_model' features for all runs. Models are fitted on
     the training (and validation) data sets of the respective run.
@@ -48,13 +48,30 @@ def get_fitted_models(df_perf, df_metadata, target_feat,
     @param train_on_train_val: Boolean indicating whether the models should be trained on the joint training and
             validation set (default: true)
     @param save_models_to_path: File path to save the resulting dataframe as csv file (optional)
+    @param show_progress: Boolean indicating whether the progress bar should be shown (default: false)
+    @param use_normalized: Boolean indicating whether the normalized features (e.g., some by employment) should be used (default: True)
+
     @return: Dictionary of reduced models of all training-test-splits. The numbers of the splittings serve as keys.
     '''
 
     df_data = pd.read_csv(df_metadata[col_file_path].unique()[0], sep=';')
+
+    if use_normalized:
+        norm_ls = features_norm_to_population_ls
+        drop_ls = features_norm_drop_ls
+
+        df_data = df_data.drop(columns=drop_ls)
+        for feat_r in norm_ls:
+            feat_new = feat_r + '_per_capita'
+            df_data[feat_new] = df_data[feat_r] / df_data['population'].astype(float)
+            df_data.drop(columns=feat_r, 
+                         inplace=True) 
+
+
     y = df_data[target_feat]
     X = df_data.drop([target_feat, col_id_ma, col_name_ma], axis=1)
 
+    
     model_dict = {}
 
     for run in tqdm(df_perf[col_run_id].unique(), disable=not show_progress, 
@@ -80,7 +97,9 @@ def get_fitted_models(df_perf, df_metadata, target_feat,
     return model_dict
 
 
-def get_mean_shap(model_dict, df_perf, df_metadata, feature_count_threshold):
+def get_mean_shap(model_dict, df_perf, 
+                  df_metadata, feature_count_threshold,
+                  use_normalized: bool = True):
     '''
     Get dataframe with SHAP feature importances.
     @param model_dict: dictionary of reduced model of all ten training-test-splits
@@ -89,8 +108,23 @@ def get_mean_shap(model_dict, df_perf, df_metadata, feature_count_threshold):
     @param feature_count_threshold: number of features included in the reduced model
     @param r2_threshold: Alternatively choose an R2 threshold to determine the reduced models
     @return: Dataframe with feature importances of reduced models of all 10 training-test-splittings.
+
     '''
     df_data = pd.read_csv(df_metadata[col_file_path].unique()[0], sep=';')
+
+    if use_normalized:
+        norm_ls = features_norm_to_population_ls
+        drop_ls = features_norm_drop_ls
+
+        df_data = df_data.drop(columns=drop_ls)
+        for feat_r in norm_ls:
+            feat_new = feat_r + '_per_capita'
+            df_data[feat_new] = (df_data[feat_r] / 
+                                 df_data['population'].astype(float))
+            df_data.drop(columns=feat_r, 
+                         inplace=True) 
+
+
     list_all_feat = []
     df_mean_shap = pd.DataFrame(columns=model_dict.keys())
     for run in df_perf[col_run_id].unique():

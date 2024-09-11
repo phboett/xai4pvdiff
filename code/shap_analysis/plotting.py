@@ -101,8 +101,10 @@ def plt_performance(df_performances, perf_metric_test, perf_metric_train, list_r
 
 
 def ax_performance(ax, df_performances, perf_metric_test, perf_metric_train, 
-                   list_runs, run_red_model, x_max, x_min=0, s=65, feat_count_red_model=None,
-                   include_train_score=False,indicate_red_model=False, label_yaxis=True,
+                   list_runs, run_red_model, x_max, x_min=0, s=65, 
+                   feat_count_red_model=None,
+                   include_train_score=False,
+                   indicate_red_model=False, label_yaxis=True,
                    show_legend=True):
     '''
     Function generates a matplotlib figure containing a plot of the r2-score depending on the number of features
@@ -129,19 +131,28 @@ def ax_performance(ax, df_performances, perf_metric_test, perf_metric_train,
     label_alternative_runs_train = True
     for run in list_runs:
         df_perf_run = df_performances[df_performances[col_run_id]==run]
-        if run==run_red_model:
-            ax.scatter(x=df_perf_run[col_feature_count], y=df_perf_run[perf_metric_test], c='tab:green', marker='.', label='test fold (selected split)', s=s)
+        if run == run_red_model:
+            ax.scatter(x=df_perf_run[col_feature_count], 
+                       y=df_perf_run[perf_metric_test], c='tab:green', 
+                       marker='.', label='test fold (selected split)', s=s)
         else:
             if label_alternative_runs_test:
-                ax.scatter(x=df_perf_run[col_feature_count], y=df_perf_run[perf_metric_test], c='tab:green', marker='.', label='test fold (other splits)',
+                ax.scatter(x=df_perf_run[col_feature_count], 
+                           y=df_perf_run[perf_metric_test], c='tab:green', 
+                           marker='.', label='test fold (other splits)',
                            alpha=0.1, s=s)
                 label_alternative_runs_test = False
             else:
-                ax.scatter(x=df_perf_run[col_feature_count], y=df_perf_run[perf_metric_test], c='tab:green', marker='.', alpha=0.1, s=s)
+                ax.scatter(x=df_perf_run[col_feature_count], 
+                           y=df_perf_run[perf_metric_test], 
+                           c='tab:green', marker='.', alpha=0.1, s=s)
 
         if include_train_score:
             if run == run_red_model:
-                ax.scatter(x=df_perf_run[col_feature_count], y=df_perf_run[perf_metric_train], c='royalblue', marker='.', label='training folds (selected split)',
+                ax.scatter(x=df_perf_run[col_feature_count], 
+                           y=df_perf_run[perf_metric_train], 
+                           c='royalblue', marker='.', 
+                           label='training folds (selected split)',
                        s=s)
             else:
                 if label_alternative_runs_train:
@@ -323,7 +334,7 @@ def bar_shap_feature_imp(df_run_eval_input, features, ax=None,
             color=cmap(norm(df_run_eval.loc[features, col_occurences_feat])))
     ax.set_yticks(np.arange(len(features)))
     ax.set_yticklabels(features, size=12)
-    ax.set_xlabel('mean | SHAP |', size=18)
+    ax.set_xlabel('mean $| \\textrm{SHAP} |$', size=18)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.locator_params(axis='x', nbins=4)
@@ -484,7 +495,7 @@ def heatmap_interactions(X, interaction_values, feature_name_dict: dict  = None,
     if plot_cbar:
         cb_ax = ax.figure.axes[-1]
         cb_ax.tick_params(labelsize=16)
-        cb_ax.set_ylabel('mean(|interaction value|)', fontsize=20)
+        cb_ax.set_ylabel('mean $|\\text{interaction value}|$', fontsize=24)
 
     ax.tick_params('y', rotation=0)
 
@@ -496,8 +507,10 @@ def heatmap_interactions(X, interaction_values, feature_name_dict: dict  = None,
         return
     
 
-def dependence_plot_main_effect(X, shap_values, feature, plot_main_effect=False, y_lim=None, x_lim=None, y_label=None,
-                             x_label=None, fig_size=(5,4), font_size = 12, tick_size = 12, ax=None):
+def dependence_plot_main_effect(X, shap_values, feature, plot_main_effect=False, 
+                                y_lim=None, x_lim=None, y_label=None,
+                                x_label=None, fig_size=(5,4), font_size = 12, 
+                                tick_size = 12, ax=None):
     '''
     Scatter plot of SHAP values or main effects of SHAP values.
     @param X: input data, used to collect indices of features
@@ -527,7 +540,9 @@ def dependence_plot_main_effect(X, shap_values, feature, plot_main_effect=False,
     else:
         ax.set_xlabel(feature, fontsize=font_size)
     
-    ax.set_title(y_label, fontsize=font_size+1)
+    if y_label != None:
+        ax.set_ylabel(y_label, fontsize=font_size)
+    #ax.set_title(y_label, fontsize=font_size+1)
 
     ax.tick_params('both', size=tick_size)
 
@@ -540,8 +555,11 @@ def dependence_plot_main_effect(X, shap_values, feature, plot_main_effect=False,
     else:
         return
 
-def dependence_plot_interactions(X, interaction_vals, feature, interaction_feature, ax, x_label=None, y_label=None,
-                             cb_label=None, x_lim=None, y_lim=None, y_ticks=False, title=None, font_size=12, tick_size = 12):
+def dependence_plot_interactions(X, interaction_vals, feature, interaction_feature, 
+                                 ax, x_label=None, y_label=None,
+                                 cb_label=None, x_lim=None, y_lim=None, 
+                                 y_ticks=False, title=None, font_size=12, tick_size = 12,
+                                 cmap: str = 'plasma'):
     '''
     Scatter plot of SHAP interaction values.
     @param X: input data to derive the indices of the feature from
@@ -551,10 +569,14 @@ def dependence_plot_interactions(X, interaction_vals, feature, interaction_featu
     @param ax: axis item to add the plot to
     @return: scatter plot and axis element the plot is added to
     '''
+
     feature_idx = list(X.columns).index(feature)
     interaction_idx = list(X.columns).index(interaction_feature)
-    scatter = ax.scatter(x=X[feature], y=interaction_vals[:, feature_idx, interaction_idx], c=X[interaction_feature],
-                         cmap='coolwarm', s=1, alpha=0.5)
+    scatter = ax.scatter(x=X[feature], y=interaction_vals[:, feature_idx, 
+                                                          interaction_idx], 
+                         c=X[interaction_feature],
+                         cmap=cmap, s=1, alpha=0.5)
+    
     if x_label != None:
         ax.set_xlabel(x_label, fontsize=font_size)
     if y_label != None:
@@ -563,15 +585,20 @@ def dependence_plot_interactions(X, interaction_vals, feature, interaction_featu
         ax.set_title(title, fontsize=font_size)
     else:
         ax.set_title(f'interaction with\n {interaction_feature}', fontsize = font_size)
+
     ax.tick_params(labelsize=tick_size)
+
     if x_lim != None:
         plt.xlim(x_lim)
+
     if y_lim != None:
         plt.ylim(y_lim)
+
     if cb_label != None:
         cbar = plt.colorbar(scatter)
         cbar.set_label(label=cb_label, size=font_size)
         cbar.ax.tick_params(labelsize=font_size)
+
     return scatter, ax
 
 def bar_mean_shap(X, shap_values, bar_color='royalblue',rename_features_dict=None, x_lim=None, show_std=True,title=None):
