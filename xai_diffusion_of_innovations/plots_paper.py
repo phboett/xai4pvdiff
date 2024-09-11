@@ -31,7 +31,7 @@ from utils.utils import col_feature_count, ranking_mean_r2_desc, \
     col_run_id, mean_r2_cv_test, mean_r2_cv_train, col_file_path, \
     col_bev_per_vehicle, col_power_accum_pv, col_features, \
     col_idx_train, col_idx_val, col_idx_test, mean_r2_cv_test, col_mean_shap,\
-    col_id_ma, col_name_ma
+    col_id_ma, col_name_ma, features_norm_to_population_ls, features_norm_drop_ls
 
 sys.path.append("code/shap_analysis")
 import plotting
@@ -125,9 +125,20 @@ def get_fitted_models_and_mean_shap_values(df_perf, df_metadata,
 def get_details_about_best_model(df_perf: pd.DataFrame, df_metadata: pd.DataFrame, 
                                  model_dict: dict,
                                  split_id_best_model: int,
-                                 feature_count_threshold: int):
+                                 feature_count_threshold: int,
+                                 use_normalized: bool = False):
     
     df_data = pd.read_csv(df_metadata[col_file_path].unique()[0], sep=";")
+    if use_normalized:
+        norm_ls = features_norm_to_population_ls
+        drop_ls = features_norm_drop_ls
+        df_data = df_data.drop(columns=drop_ls)
+
+        for feat_r in norm_ls:
+            feat_new = feat_r + '_per_capita'
+            df_data[feat_new] = df_data[feat_r] / df_data['population'].astype(float)
+            df_data.drop(columns=feat_r, 
+                        inplace=True)
 
     # Get reduced model and the input data for the reduced model
     df_performance_red_model = df_perf.loc[
