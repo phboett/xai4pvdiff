@@ -12,6 +12,7 @@ import pandas as pd
 
 import geopandas as gpd
 
+import matplotlib
 from matplotlib import pyplot as plt
 from PIL import Image
 
@@ -31,7 +32,8 @@ from utils.utils import col_feature_count, ranking_mean_r2_desc, \
     col_run_id, mean_r2_cv_test, mean_r2_cv_train, col_file_path, \
     col_bev_per_vehicle, col_power_accum_pv, col_features, \
     col_idx_train, col_idx_val, col_idx_test, mean_r2_cv_test, col_mean_shap,\
-    col_id_ma, col_name_ma, features_norm_to_population_ls, features_norm_drop_ls
+    col_id_ma, col_name_ma, features_norm_to_population_ls, features_norm_drop_ls,\
+    col_predictions
 
 sys.path.append("code/shap_analysis")
 import plotting
@@ -138,7 +140,7 @@ def get_details_about_best_model(df_perf: pd.DataFrame, df_metadata: pd.DataFram
             feat_new = feat_r + '_per_capita'
             df_data[feat_new] = df_data[feat_r] / df_data['population'].astype(float)
             df_data.drop(columns=feat_r, 
-                        inplace=True)
+                         inplace=True)
 
     # Get reduced model and the input data for the reduced model
     df_performance_red_model = df_perf.loc[
@@ -164,7 +166,7 @@ def get_details_about_best_model(df_perf: pd.DataFrame, df_metadata: pd.DataFram
 def plot_map_distribution_pv_and_bev(save_fig: bool = False, 
                                      map_type: str = "GEM",
                                      cmap='inferno',
-                                     label_size=16):
+                                     label_size=40):
     """Plot the distribution of PV and BEV on a map.
 
     Args:
@@ -300,7 +302,7 @@ def plot_map_distribution_pv_and_bev(save_fig: bool = False,
     return 
 
 
-def plot_parts_method(save_fig: bool = False,
+def plot_separate_parts_method_figure(save_fig: bool = False,
                       cmap='inferno', use_normalized: bool = True, 
                       feature_count_threshold_pv: int = 15):
     """Plot the parts of the figure explaining the approach"""
@@ -346,10 +348,10 @@ def plot_parts_method(save_fig: bool = False,
     
     # Shap Plots
     ## Example
-    [df_perf_pv, df_meta_pv, 
-     _, _] = load_performance_and_metadata_dataframes(use_normalized=use_normalized)
+    [df_perf_pv, _, 
+     df_meta_pv, _] = load_performance_and_metadata_dataframes(use_normalized=use_normalized)
 
-    df_predictions = pd.read_csv("data/output/predictions_rfe.csv", sep=";")
+    
     
     df_perf_all_split_pv = df_perf_pv.loc[
     (df_perf_pv[col_feature_count] == feature_count_threshold_pv)
@@ -368,37 +370,55 @@ def plot_parts_method(save_fig: bool = False,
                                                                             feature_count_threshold_pv, col_power_accum_pv)
     # TODO is this the df_mean_shap the same? It is, right?
     [X_red_model_pv, shap_values_pv, _, interaction_values_pv,
-     _, _, _, _] = get_reduced_model_features_n_shap(feature_count_threshold_pv, 
+     _, _, _, _] = get_reduced_model_features_n_shap(feature_count_threshold_pv=15, 
                                                      feature_count_threshold_bev=15, 
                                                      run_evaluation=False,
                                                      use_normalized=use_normalized)
     
     red_model = model_dict_pv[split_id_best_model]
-    y_red = red_model.predict(X_red_model_pv)
+    y_pred = red_model.predict(X_red_model_pv)
+    df_pred = pd.DataFrame({col_id_ma: df_data_pv[col_id_ma], col_predictions: y_pred})
     tree_explainer = shap.explainers.Tree(red_model)    
     shap_values = tree_explainer.shap_values(X_red_model_pv)
 
-    # Plot for a specific city (picked a random example)
+    # Map with predictions
+    fig_map_predict = plt.figure(figsize=(10, 10))
+    ax_pred = fig_map_predict.add_subplot(111)
+    gdf_w_pred = pd.merge(left=gdf_complete_pv,right=df_pred, on=col_id_ma, how='left')
+    gdf_w_pred.plot(column=col_predictions, ax=ax_pred, cmap=cmap)
+
+    # Map with differences
+    gdf_w_pred['diff'] = abs(gdf_w_pred[col_power_accum_pv] - gdf_w_pred[col_predictions])
+    fig_map_diff, ax_map_diff = plt.subplots(figsize=(10, 10))
+    gdf_w_pred.plot(column='diff', ax=ax_map_diff, cmap='viridis')
+
+
+    # Plot for a specific city (picked a random example )
+    print("Showing prediction for " + 
+          f"{df_data_pv.loc[df_data_pv[col_id_ma] == 53340020][col_name_ma].values}")
     idx_city = df_data_pv.loc[df_data_pv[col_id_ma] == 53340020].index
     shap_city = shap_values[idx_city, :]
     shap_city = shap_city[0]
     idx_sorted = np.argsort(np.abs(shap_city))[::-1]
 
-    fig_shap_addition = plt.figure(figsize=(10, 10))
+    mean_plus_shap = df_pred[col_predictions].mean()
+
+    fig_shap_addition = plt.figure(figsize=(7, 4))
     ax_shap_addition = fig_shap_addition.add_subplot(111)
 
     nn_features_shown = 3
     for idx, ranking_feature in enumerate(range(nn_features_shown)):
         if shap_city[idx_sorted[ranking_feature]] >= 0:
-            ax_shap_addition.broken_barh(
+            box = ax_shap_addition.broken_barh(
                 [(mean_plus_shap, shap_city[idx_sorted[ranking_feature]])],
                 (11 + idx * 10, 7),
                 facecolors=("firebrick"),
                 zorder=2,
             )
             mean_plus_shap += shap_city[idx_sorted[ranking_feature]]
+
         else:
-            ax_shap_addition.broken_barh(
+            box = ax_shap_addition.broken_barh(
                 [
                     (
                         (mean_plus_shap + shap_city[idx_sorted[ranking_feature]]),
@@ -410,8 +430,22 @@ def plot_parts_method(save_fig: bool = False,
                 zorder=2,
             )
             mean_plus_shap += shap_city[idx_sorted[ranking_feature]]
+        print(f"\tChange SHAP: {shap_city[idx_sorted[ranking_feature]]:.3f}")
+        # Add values to bars
+        ax_shap_addition.text(mean_plus_shap - shap_city[idx_sorted[ranking_feature]] / 2, 
+                              11 + idx * 10 + 3.75,
+                              f"{shap_city[idx_sorted[ranking_feature]]:.2f}", 
+                              fontsize=30, 
+                              color='white', 
+                              horizontalalignment='center',
+                              verticalalignment='center')
+        
+        ax_shap_addition.vlines(x=mean_plus_shap, ymin=11 + idx * 10,
+                                ymax=11 + (idx + 1) * 10 + 7, color='k', zorder=4,
+                                linewidth=3.4)
+
     if nn_features_shown < feature_count_threshold_pv:
-        shap_remaining = sum(shap_city[idx_sorted[k:]])
+        shap_remaining = sum(shap_city[idx_sorted[nn_features_shown:]])
         if shap_remaining >= 0:
             ax_shap_addition.broken_barh(
                 [(mean_plus_shap, shap_remaining)],
@@ -429,56 +463,97 @@ def plot_parts_method(save_fig: bool = False,
         ax_shap_addition.set_ylim(5, (nn_features_shown + 2) * 10)
         ax_shap_addition.set_yticks(
             range(15, 15 + (nn_features_shown + 1) * 10, 10),
-            # labels=[
-            #     "global radiation"
-            #     if X_red_model.columns[ranking_feature] == "Global irradiation"
-            #     else X_red_model.columns[ranking_feature]
-            #     for ranking_feature in idx_sorted[:k]
-            # ]
-            labels=X_red_model_pv.columns[idx_sorted[:k]].to_list() + ["remaining features"],
+            X_red_model_pv.columns[idx_sorted[:nn_features_shown]].to_list() + ["remaining features"]
         )
-
+        
         mean_plus_shap += shap_remaining
     else:
         ax_shap_addition.set_ylim(5, (nn_features_shown + 1) * 10)
         ax_shap_addition.set_yticks(
             range(15, 15 + nn_features_shown * 10, 10),
             labels=[
-                X_red_model_pv.columns[ranking_feature] for ranking_feature in idx_sorted[:k]
+                X_red_model_pv.columns[ranking_feature] 
+                for ranking_feature in idx_sorted[:nn_features_shown]
             ],
         )
+    
     ax_shap_addition.invert_yaxis()
     
     plt.axvline(x=np.mean(y_pred), color="darkgray", zorder=1, linewidth=3)
     plt.axvline(x=mean_plus_shap, color="darkgray", ls="--", zorder=1, linewidth=3)
+    
     ax_shap_addition.spines[["right", "bottom", "top", "left"]].set_visible(False)
 
-    ax_shap_addition.tick_params(axis="both", which="both", fontsize=20)
+    ax_shap_addition.text(np.mean(y_pred)+.004, 1.05, "$\\boldsymbol{\\Phi_0}$", fontsize=40,
+                            horizontalalignment='center')
+    ax_shap_addition.text(mean_plus_shap, 1.05, "$\\boldsymbol{f(x)}$", fontsize=40,
+                           horizontalalignment='center')
+    ax_shap_addition.set_xlabel("predicted power of\nPV systems installed", fontsize=20)
+
+    ax_shap_addition.tick_params(axis="both", which="both", labelsize=20)
     ax_shap_addition.tick_params(left=False)
     ax_shap_addition.tick_params(axis="x", which="both", 
                                  bottom=False, top=False, labelbottom=False)
 
+    # Feature importance
+    fig_shap_importance, ax_shap_imp = plt.subplots(figsize=(7, 4))
+    feature_names = X_red_model_pv.columns[idx_sorted[:nn_features_shown]].to_list()
+    plotting.bar_shap_reduced(X_red_model_pv, shap_values, bar_color='royalblue',
+                              show_std=False, ax=ax_shap_imp, n_print=nn_features_shown)
+    ax_shap_imp.set_yticks(range(nn_features_shown), 
+                          labels=feature_names)
+    ax_shap_imp.set_xlabel("mean $|\\text{SHAP}|$", fontsize=20)
+
+    # Dependencies
+    fig_dep, ax_dep = plt.subplots(figsize=(6, 4))
+    feat_r = X_red_model_pv.iloc[:, idx_sorted[0]].name
+    xlabel_feat = rename_tick_dict[feat_r] if feat_r in rename_tick_dict else feat_r
+    plotting.dependence_plot(X_red_model_pv, shap_values_pv, feature=feat_r,
+                             ax=ax_dep, x_label=xlabel_feat, y_label="SHAP values",)
+    ax_dep.axhline(y=0, color='k', ls='--', lw=2)
+
     # Aesthetics
-    ax_target.axis('off')
-    ax_input.axis('off')
+    map_axis = [ax_target, ax_input, ax_pred, ax_map_diff]
+    for ax_r in map_axis:
+        ax_r.axis('off')
+        ax_r.set_rasterized(True)
+
+    fig_shap_addition.tight_layout()
+    fig_shap_importance.tight_layout()
+
+        
 
     if save_fig:
         fpath_fig_target = "plots/method_target_map.svg"
         fpath_fig_input = "plots/method_input_map.svg"
-        fpath_shap_addtion = "plots/method_shap_addition.svg"
+        fpath_fig_pred = "plots/method_prediction_map.svg"
+        fpath_fig_diff = "plots/method_absdiff_target_pred_map.svg"
+
+        fpath_shap_addition = "plots/method_shap_addition.svg"
         fpath_feature_importance = "plots/method_feature_importance.svg"
+        fpath_dep = "plots/method_dependency.svg"
 
-        fig_target.savefig(fpath_fig_target, bbox_inches='tight')
-        fig_input.savefig(fpath_fig_input, bbox_inches='tight')
+        fig_target.savefig(fpath_fig_target, bbox_inches='tight', transparent=True)
+        fig_input.savefig(fpath_fig_input, bbox_inches='tight', transparent=True)
+        fig_map_predict.savefig(fpath_fig_pred, bbox_inches='tight', transparent=True)
+        fig_map_diff.savefig(fpath_fig_diff, bbox_inches='tight', transparent=True)
 
-        for fig_r in [fig_target, fig_input]:
+        fig_shap_addition.savefig(fpath_shap_addition, bbox_inches='tight', transparent=True)
+        fig_shap_importance.savefig(fpath_feature_importance, bbox_inches='tight', 
+                                    transparent=True)
+        fig_dep.savefig(fpath_dep, bbox_inches='tight', 
+                        transparent=True)
+
+        for fig_r in [fig_target, fig_input, 
+                      fig_map_predict, fig_map_diff,
+                      fig_shap_addition, fig_shap_importance,
+                      fig_dep]:
             fig_r.clear()
             plt.close(fig_r)
 
     else:
 
         plt.show()
-
 
     return
 
@@ -636,18 +711,19 @@ def plot_mean_shap_features(feature_count_threshold_pv: int = 15,
     fig.tight_layout()
 
     cax = fig.add_axes([.925, .5, 0.02 , .3])
-
-    cbar = fig.colorbar(sm, cax=cax)
-    cbar.set_label('number feature occurs in runs', rotation=270, labelpad=25, size=18)
-    cbar.ax.tick_params(labelsize=18)
-    cbar.set_ticks([1, 4, 7, 10])
+    cbar_ticks = np.array([1, 4, 7, 10]) 
+    cbar = fig.colorbar(sm, cax=cax, ticks=cbar_ticks + .5)
+    cbar.set_label('number feature occurs in runs', rotation=270, labelpad=25, size=18,
+                   )
+    cbar.ax.tick_params(labelsize=22)
+    cbar.ax.tick_params(which='minor', length=0)
+    cbar.set_ticklabels(cbar_ticks)
 
     # Add cartoons
     pv_image = Image.open(f"{__cartoon_path}/pv.png")
     ax_pv_image = fig.add_axes([0.25, .1, 0.25, 0.25])
     ax_pv_image.imshow(pv_image)
     ax_pv_image.axis('off')
-
 
     car_image = Image.open(f"{__cartoon_path}/car.png")
     ax_car_image = fig.add_axes([0.775, .075, 0.2, 0.2])
@@ -702,8 +778,11 @@ def get_reduced_model_features_n_shap(feature_count_threshold_pv,
                                                                                 feature_count_threshold_pv, col_power_accum_pv)
 
         [X_red_model_pv, _, 
-        shap_values_pv, interaction_values_pv] = get_details_about_best_model(df_perf_pv, df_metadata_pv, model_dict_pv, 
-                                                                                    split_id_best_model, feature_count_threshold_pv)
+        shap_values_pv, 
+        interaction_values_pv] = get_details_about_best_model(df_perf_pv, df_metadata_pv, 
+                                                              model_dict_pv, 
+                                                              split_id_best_model, 
+                                                              feature_count_threshold_pv)
 
         
         ## BEV
@@ -974,6 +1053,8 @@ def plot_interaction_heatmaps_pv_and_bev(feature_count_threshold_pv: int = 15,
     # Plot
     fig, [ax_pv, ax_bev] = plt.subplots(1, 2, figsize=(30, 10))
 
+    # Delete the diagonal
+
     plotting.heatmap_interactions(X_red_model_pv, interaction_values_pv, ax=ax_pv, 
                                   feature_name_dict=rename_tick_dict, plot_cbar=True,
                                   fontsize=13, remove_diagonal=True)
@@ -1187,11 +1268,10 @@ def plot_all_figures():
     use_normalized = True
 
     # Figure 1: Target distribution on a map of Germany.
-    #plot_map_distribution_pv_and_bev(save_fig=True)
+    plot_map_distribution_pv_and_bev(save_fig=True)
 
     # Figure 2
-    ## Principle
-
+    plot_separate_parts_method_figure(save_fig=True)
 
     # Figure 3: Performance of the recursive GBT
     plot_recursive_gbt_performance(feature_count_threshold_pv=15,

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+import matplotlib.colors as mcolors
 from matplotlib.cm import ScalarMappable
 from matplotlib import ticker
 import seaborn as sns
@@ -317,8 +318,9 @@ def bar_shap_feature_imp(df_run_eval_input, features, ax=None,
     else:
         norm = plt.Normalize(min(feature_occurence_lims),
                              max(feature_occurence_lims))
-        
-    cmap = plt.get_cmap(cmap)
+    max_runs = df_run_eval[col_occurences_feat].max()
+    min_runs = df_run_eval[col_occurences_feat].min()
+    cmap = plt.get_cmap(cmap, int(max_runs - min_runs) +1 )
 
     if nr_features_shown is None:
         widths = df_run_eval.loc[features, col_mean_shap]
@@ -340,8 +342,10 @@ def bar_shap_feature_imp(df_run_eval_input, features, ax=None,
     ax.locator_params(axis='x', nbins=4)
     ax.margins(x=0.02)
 
-    sm = ScalarMappable(cmap=cmap, norm=plt.Normalize(df_run_eval.loc[features, col_occurences_feat].min(),
-                                                      df_run_eval.loc[features, col_occurences_feat].max()))
+    bounds = np.arange(df_run_eval.loc[features, col_occurences_feat].min(),
+                       df_run_eval.loc[features, col_occurences_feat].max() + 2, 1)
+
+    sm = ScalarMappable(cmap=cmap, norm=mcolors.BoundaryNorm(bounds, cmap.N))
     sm.set_array([])
 
     if ax is None:
@@ -351,8 +355,6 @@ def bar_shap_feature_imp(df_run_eval_input, features, ax=None,
 
     ax.tick_params(labelsize=labelsize)
     
-
-
     if ax is None:
         plt.tight_layout()
         return fig, ax
@@ -456,7 +458,8 @@ def heatmap_interactions(X, interaction_values, feature_name_dict: dict  = None,
     @param X: Input data
     @param interaction_values: Interaction values
     @param feature_name_dict: dictionary giving feature names to modify
-    @param zero_main_effect: Boolean indicating whether the main efeects should be set to zero. Default is true.
+    @param zero_main_effect: Boolean indicating whether the main effects 
+        should be set to zero. Default is true.
     @return: figure and axis giving heat map
     '''
     features = list(X.columns)
@@ -469,13 +472,14 @@ def heatmap_interactions(X, interaction_values, feature_name_dict: dict  = None,
 
     mean_interactions = abs(interaction_values).mean(axis=0)
 
-    if remove_diagonal:
-        []
-
     if zero_main_effect:
         mean_interactions[np.arange(len(features_renamed)), np.arange(len(features))] = 0
 
-    kwargs = dict(cmap=cmap, cbar=plot_cbar, linewidths=0.2)
+    if remove_diagonal:
+        mean_interactions[np.arange(len(features_renamed)), np.arange(len(features))] = np.nan
+
+    kwargs = dict(cmap=cmap, cbar=plot_cbar, 
+                  linewidths=0.5, linecolor='black')
     if vlims is not None:
         kwargs['vmin'] = min(vlims)
         kwargs['vmax'] = max(vlims)
@@ -486,6 +490,9 @@ def heatmap_interactions(X, interaction_values, feature_name_dict: dict  = None,
 
     else:
         sns.heatmap(np.flip(mean_interactions), ax=ax, **kwargs)
+    
+    for _, spine in ax.spines.items():
+        spine.set_visible(True)
 
     ax.xaxis.tick_top()
 
@@ -559,7 +566,7 @@ def dependence_plot_interactions(X, interaction_vals, feature, interaction_featu
                                  ax, x_label=None, y_label=None,
                                  cb_label=None, x_lim=None, y_lim=None, 
                                  y_ticks=False, title=None, font_size=12, tick_size = 12,
-                                 cmap: str = 'plasma'):
+                                 cmap: str = 'inferno'):
     '''
     Scatter plot of SHAP interaction values.
     @param X: input data to derive the indices of the feature from
@@ -625,8 +632,10 @@ def bar_mean_shap(X, shap_values, bar_color='royalblue',rename_features_dict=Non
                           features]
     else:
         feature_labels = features
+
     fig = plt.figure(figsize=(7,7.5))
     ax = fig.add_subplot(111)
+
     if show_std:
         ax.barh(y=np.arange(len(features)), color=bar_color, width=mean_abs_shap, xerr=std_abs_shap)
     else:
@@ -635,18 +644,28 @@ def bar_mean_shap(X, shap_values, bar_color='royalblue',rename_features_dict=Non
     ax.set_xlabel(r'mean(|SHAP value|)',fontsize=16)
     ax.tick_params(axis='x',labelsize=16)
     ax.tick_params(axis='y', labelsize=14)
+
     if x_lim != None:
         plt.xlim(x_lim)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
+
     if title != None:
         plt.title(title, fontsize=18)
     plt.tight_layout()
+
     return fig, ax
 
-def bar_shap_reduced(X, shap_values, bar_color='royalblue',n_print=None,x_lim=None, show_std=True,title=None):
+def bar_shap_reduced(X, shap_values, bar_color='royalblue',
+                     n_print=None,
+                     x_label=None,
+                     x_lim=None, 
+                     show_std:bool=True, 
+                     draw_values_in_bar: bool = True, ax=None):
     '''
-    Plotting SHAP feature importances of most important features and sum of remaining SHAP feature importance.
+    Plotting SHAP feature importances of most important features and 
+    sum of remaining SHAP feature importance.
+
     @param X: Data the model is trained on (dataframe)
     @param shap_values: shap_values of model
     @param n_print: Number of features to be displayed
@@ -658,29 +677,51 @@ def bar_shap_reduced(X, shap_values, bar_color='royalblue',n_print=None,x_lim=No
     std_abs_shap = np.abs(shap_values).std(axis=0)
     mean_abs_shap = mean_abs_shap[sorted_idx_shap]
     std_abs_shap = std_abs_shap[sorted_idx_shap]
+
     if n_print is not None:
         mean_abs_shap = mean_abs_shap[:n_print]
         std_abs_shap = std_abs_shap[:n_print]
+
     features = np.array(features)[sorted_idx_shap]
     features = features[-n_print:]
-    print(features)
-    print(mean_abs_shap)
 
-    fig = plt.figure(figsize=(7,4))
-    ax = fig.add_subplot(111)
+    if ax is None:
+        fig = plt.figure(figsize=(7,4))
+        ax = fig.add_subplot(111)
+
     if show_std:
-        ax.barh(y=np.arange(len(features)), color=bar_color, width=mean_abs_shap, xerr=std_abs_shap)
+        ax.barh(y=np.arange(len(features)), 
+                color=bar_color, width=mean_abs_shap, 
+                xerr=std_abs_shap)
     else:
-        ax.barh(y=np.arange(len(features)), color=bar_color, width=mean_abs_shap,height = 0.7)
+        ax.barh(y=np.arange(len(features)), 
+                color=bar_color, 
+                width=mean_abs_shap,
+                height = 0.7)
+
     ax.set_xticks([0,0.01])
+    ax.set_yticks(np.arange(len(features)), 
+                  labels=features)
+    
+    if x_label is not None:
+        ax.set_xlabel(x_label, fontsize=20)
+
+    ax.tick_params(axis='y',labelsize=20)
     ax.tick_params(axis='x',labelsize=27)
-    ax.tick_params(labelleft=False)
-    plt.yticks([0,1,2])
+    
+     
     if x_lim != None:
-        plt.xlim(x_lim)
+        ax.set_xlim(x_lim)
+
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    return fig, ax
+
+    if ax is None:
+    
+        return fig, ax
+    else:
+        return
+
 
 def plot_performance_lasso(df_lasso_mean, perf_metric_train, perf_metric_test, x_max, fig_size=(9, 5),
                                         y_min=0, y_max=0.9, threshold_inv_alpha=None, pos_leg_in_figure=True):

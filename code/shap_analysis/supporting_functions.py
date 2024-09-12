@@ -34,6 +34,7 @@ def prepare_metadata_dataframe(df_metadata, idx_sets):
             lambda idx_list: [int(idx) for idx in re.findall(r'\d+', idx_list)])
     return df_metadata
 
+
 def get_fitted_models(df_perf, df_metadata, target_feat, 
                       feat_count_red_model=None,
                       train_on_train_val=True,
@@ -110,6 +111,7 @@ def get_mean_shap(model_dict, df_perf,
     @return: Dataframe with feature importances of reduced models of all 10 training-test-splittings.
 
     '''
+
     df_data = pd.read_csv(df_metadata[col_file_path].unique()[0], sep=';')
 
     if use_normalized:
@@ -155,4 +157,5 @@ def get_mean_shap(model_dict, df_perf,
         df_mean_shap.loc[mean_r2_cv_test, run] = df_perf.loc[
             (df_perf[col_run_id] == run) & (df_perf[col_feature_count] == feature_count_threshold) &
             (df_perf[ranking_mean_r2_desc] == 1),mean_r2_cv_test].values[0]
+        
     return df_mean_shap
