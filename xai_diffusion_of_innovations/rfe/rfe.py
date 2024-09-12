@@ -16,11 +16,7 @@ from copy import deepcopy
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
-sys.path.append('code')
-print(os.getcwd())
-from utils.utils import *
-os.getcwd()
-
+from xai_diffusion_of_innovations.utils.utils import *
 
 
 def random_search_cv(train_set, val_set, param_intervals, n_iter, 

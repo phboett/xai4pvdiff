@@ -10,7 +10,7 @@ import shap
 
 from tqdm import tqdm
 
-from utils.utils import *
+from xai_diffusion_of_innovations.utils.utils import *
 
 def prepare_performance_dataframe(df_perf, col_features):
     '''Prepare dataframe with results. String of all features to list of features.

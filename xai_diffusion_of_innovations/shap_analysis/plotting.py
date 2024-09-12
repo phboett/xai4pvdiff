@@ -11,7 +11,7 @@ from matplotlib.cm import ScalarMappable
 from matplotlib import ticker
 import seaborn as sns
 
-from utils.utils import *
+from xai_diffusion_of_innovations.utils.utils import *
 
 def plt_performance(df_performances, perf_metric_test, perf_metric_train, list_runs, run_red_model, x_max, x_min=0, s=65, feat_count_red_model=None,
                     include_train_score=False,indicate_red_model=False):

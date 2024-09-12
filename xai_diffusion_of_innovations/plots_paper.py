@@ -27,17 +27,17 @@ import gzip
 __fpath_output = "data/output"
 __cartoon_path = "data/raw_data/plotting"
 
-sys.path.append("code")
-from utils.utils import col_feature_count, ranking_mean_r2_desc, \
+
+from xai_diffusion_of_innovations.utils.utils import col_feature_count, ranking_mean_r2_desc, \
     col_run_id, mean_r2_cv_test, mean_r2_cv_train, col_file_path, \
     col_bev_per_vehicle, col_power_accum_pv, col_features, \
     col_idx_train, col_idx_val, col_idx_test, mean_r2_cv_test, col_mean_shap,\
     col_id_ma, col_name_ma, features_norm_to_population_ls, features_norm_drop_ls,\
     col_predictions
 
-sys.path.append("code/shap_analysis")
-import plotting
-from supporting_functions import prepare_performance_dataframe, \
+
+from xai_diffusion_of_innovations.shap_analysis import plotting
+from xai_diffusion_of_innovations.shap_analysis.supporting_functions import prepare_performance_dataframe, \
     prepare_metadata_dataframe, get_fitted_models as __get_fitted_models, \
     get_mean_shap as __get_mean_shap
 

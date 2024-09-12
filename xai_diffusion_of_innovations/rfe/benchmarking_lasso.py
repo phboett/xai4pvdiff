@@ -10,11 +10,9 @@ import random
 
 from tqdm import tqdm
 
-sys.path.append('code')
-print(os.getcwd())
-from utils.utils import *
-from shap_analysis.supporting_functions import *
-os.getcwd()
+from xai_diffusion_of_innovations.utils.utils import *
+from xai_diffusion_of_innovations.shap_analysis.supporting_functions import *
+
 
 def lasso_simulation(df, col_target_feature, train_sets, test_sets, 
                      alpha_range, show_progress: bool = True):
