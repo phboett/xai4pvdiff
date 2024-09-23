@@ -58,17 +58,17 @@ rename_tick_dict = {'employees with academic qualification': 'employees with aca
                         'median income (professional qualification)': 'mean income\n (professional qualification)',
                         'Certificates of Secondary Education (males)': 'certificates of secondary\neducation (males)',
                         'employees without any professional qualification': 'employees without any\nprofessional qualification',
-                        'CDU/CSU': 'votes CDU/CSU [\%]',
-                        'other parties': 'votes other parties [\%]',
-                        'FDP': 'votes FDP [\%]',
-                        'The Left': 'votes The Left [\%]',
-                        'AfD': 'votes AfD [\%]',
-                        'The Greens': 'votes The Greens [\%]',
-                        'SPD': 'votes SPD [\%]',
-                        'share 4-person households': 'share of\n4-person households [\%]',
-                        'share 5-person households': 'share of\n5-person households [\%]',
-                        'flats with 5+ rooms': 'share of\nflats with 5+ rooms [\%]',
-                        col_power_accum_pv: 'photovoltaic power [kW p.h.]',
+                        'CDU/CSU': 'votes CDU/CSU [\\%]',
+                        'other parties': 'votes other parties [\\%]',
+                        'FDP': 'votes FDP [\\%]',
+                        'The Left': 'votes The Left [\\%]',
+                        'AfD': 'votes AfD [\\%]',
+                        'The Greens': 'votes The Greens [\\%]',
+                        'SPD': 'votes SPD [\\%]',
+                        'share 4-person households': 'share of\n4-person households [\\%]',
+                        'share 5-person households': 'share of\n5-person households [\\%]',
+                        'flats with 5+ rooms': 'share of\nflats with 5+ rooms [\\%]',
+                        col_power_accum_pv: 'photovoltaic power [kWp/hh]',
                         'global radiation': 'global radiation [kWh/m²]',
                         'income tax': 'income tax [€ p.c.]',}
 
@@ -431,10 +431,15 @@ def plot_separate_parts_method_figure(save_fig: bool = False,
             )
             mean_plus_shap += shap_city[idx_sorted[ranking_feature]]
         print(f"\tChange SHAP: {shap_city[idx_sorted[ranking_feature]]:.3f}")
+
         # Add values to bars
+        value_str = f"{shap_city[idx_sorted[ranking_feature]]:.2f}"
+        if shap_city[idx_sorted[ranking_feature]] > 0:
+            value_str = "+" + value_str
+
         ax_shap_addition.text(mean_plus_shap - shap_city[idx_sorted[ranking_feature]] / 2, 
                               11 + idx * 10 + 3.75,
-                              f"{shap_city[idx_sorted[ranking_feature]]:.2f}", 
+                              value_str, 
                               fontsize=30, 
                               color='white', 
                               horizontalalignment='center',
@@ -484,7 +489,7 @@ def plot_separate_parts_method_figure(save_fig: bool = False,
     
     ax_shap_addition.spines[["right", "bottom", "top", "left"]].set_visible(False)
 
-    ax_shap_addition.text(np.mean(y_pred)+.004, 1.05, "$\\boldsymbol{\\Phi_0}$", fontsize=40,
+    ax_shap_addition.text(np.mean(y_pred)+.004, 1.05, "$\\boldsymbol{\\phi_0}$", fontsize=40,
                             horizontalalignment='center')
     ax_shap_addition.text(mean_plus_shap, 1.05, "$\\boldsymbol{f(x)}$", fontsize=40,
                            horizontalalignment='center')
@@ -561,7 +566,8 @@ def plot_separate_parts_method_figure(save_fig: bool = False,
 def plot_recursive_gbt_performance(feature_count_threshold_pv: int = 15, 
                                    feature_count_threshold_bev: int = 15,
                                    save_fig: bool = False, 
-                                   use_normalized: bool = True):
+                                   use_normalized: bool = True,
+                                   poster_version: bool = False):
 
     [df_perf_pv, df_perf_bev, 
      _, _] = load_performance_and_metadata_dataframes(use_normalized=use_normalized)
@@ -665,8 +671,12 @@ def plot_recursive_gbt_performance(feature_count_threshold_pv: int = 15,
     
 
     if save_fig:
-        fig_path = "plots/rfe_performance_pv_and_bev.pdf"
-        fig.savefig(fig_path, bbox_inches='tight')
+        fig_path = "plots/rfe_performance_pv_and_bev"
+        if poster_version:
+            fig.savefig(fig_path + "_poster.png", bbox_inches='tight',
+                        transparent=True)
+        else:
+            fig.savefig(fig_path + ".pdf", bbox_inches='tight')
 
         fig.clear()
         plt.close(fig)
@@ -679,10 +689,17 @@ def plot_recursive_gbt_performance(feature_count_threshold_pv: int = 15,
 
 def plot_mean_shap_features(feature_count_threshold_pv: int = 15,
                             feature_count_threshold_bev: int = 15,  
-                            save_fig: bool = False, 
-                            run_evaluation: bool = False,
-                            use_normalized: bool = True):
+                            save_fig: bool = False, nr_features_shown: int = 25,
+                            fig_height: int = 17,
+                            run_evaluation: bool = False, labelsize: int = 18,
+                            use_normalized: bool = True, 
+                            poster_version: bool = False):
     
+    if poster_version:
+        print("Figure for poster with hard coded height, fontsize and number of features shown.")
+        fig_height = 10
+        nr_features_shown = 15
+        laberlsize = 25
 
     [_, _, df_mean_shap_pv, _,
      _, _, df_mean_shap_bev, _] = get_reduced_model_features_n_shap(feature_count_threshold_pv, 
@@ -698,24 +715,27 @@ def plot_mean_shap_features(feature_count_threshold_pv: int = 15,
     features_bev.remove(mean_r2_cv_test)
 
     # Plot
-    fig, [ax_pv, ax_bev] = plt.subplots(1, 2, figsize=(20, 17))
+    fig, [ax_pv, ax_bev] = plt.subplots(1, 2, figsize=(20, fig_height))
     plotting.bar_shap_feature_imp(df_mean_shap_pv, features_pv,
-                                  ax=ax_pv, nr_features_shown=25,
+                                  ax=ax_pv, nr_features_shown=nr_features_shown,
                                   feature_occurence_lims=feature_occ_lims,
-                                   cmap='viridis', labelsize=18)
+                                   cmap='viridis', labelsize=labelsize,
+                                   xlabel="mean $|\\text{SHAP values}|$ [kWp/hh]")
     sm = plotting.bar_shap_feature_imp(df_mean_shap_bev, features_bev, 
-                                  ax=ax_bev, nr_features_shown=25,
+                                  ax=ax_bev, nr_features_shown=nr_features_shown,
                                   feature_occurence_lims=feature_occ_lims,
-                                  cmap='viridis', labelsize=18)
+                                  cmap='viridis', labelsize=labelsize,
+                                  xlabel="mean $|\\text{SHAP values}|$ [\\%]",
+                                  scalefactor_x=100.)
     
     fig.tight_layout()
 
     cax = fig.add_axes([.925, .5, 0.02 , .3])
     cbar_ticks = np.array([1, 4, 7, 10]) 
     cbar = fig.colorbar(sm, cax=cax, ticks=cbar_ticks + .5)
-    cbar.set_label('number feature occurs in runs', rotation=270, labelpad=25, size=18,
+    cbar.set_label('number feature occurs in runs', rotation=270, labelpad=25, size=labelsize,
                    )
-    cbar.ax.tick_params(labelsize=22)
+    cbar.ax.tick_params(labelsize=labelsize *1.3)
     cbar.ax.tick_params(which='minor', length=0)
     cbar.set_ticklabels(cbar_ticks)
 
@@ -726,13 +746,22 @@ def plot_mean_shap_features(feature_count_threshold_pv: int = 15,
     ax_pv_image.axis('off')
 
     car_image = Image.open(f"{__cartoon_path}/car.png")
-    ax_car_image = fig.add_axes([0.775, .075, 0.2, 0.2])
+    if poster_version:
+        ax_car_image = fig.add_axes([0.775, .12, 0.2, 0.2])
+    else:
+        ax_car_image = fig.add_axes([0.775, .1, 0.2, 0.2])
+
     ax_car_image.imshow(car_image)
     ax_car_image.axis('off')
 
     if save_fig:
-        fig_path = "plots/shap_feature_importance_pv_n_bev.pdf"
-        fig.savefig(fig_path, bbox_inches='tight')
+        fig_path = "plots/shap_feature_importance_pv_n_bev"
+
+        if poster_version:
+            fig.savefig(fig_path + "_poster.png", bbox_inches='tight',
+                        transparent=True)
+        else:
+            fig.savefig(fig_path + ".pdf", bbox_inches='tight')
 
         fig.clear()
         plt.close(fig)
@@ -823,7 +852,8 @@ def get_reduced_model_features_n_shap(feature_count_threshold_pv,
 def plot_dependency_pv_and_bev(feature_count_threshold_pv=15,
                               feature_count_threshold_bev=15, 
                               save_fig=False, nr_best_features=4,
-                              run_evaluation=False, use_normalized=True):
+                              run_evaluation=False, use_normalized=True,
+                              poster_version=False):
     """Plot 2 by 4 with depency plot in the best model."""
 
     [X_red_model_pv, shap_values_pv, df_mean_shap_pv, _,
@@ -874,7 +904,8 @@ def plot_dependency_pv_and_bev(feature_count_threshold_pv=15,
                                      feature=feat_r,
                                      x_label=xlabel_feat,
                                      y_label="", label_size=20,
-                                     ax=ax_bev[count_plotted])
+                                     ax=ax_bev[count_plotted],
+                                     scalefactor_y=100)
             
             count_plotted += 1
 
@@ -885,18 +916,18 @@ def plot_dependency_pv_and_bev(feature_count_threshold_pv=15,
             break
 
     # Aesthetics
-
-    for ax_r in [ax_pv[0], ax_bev[0]]:
-        ax_r.set_ylabel("SHAP", size=20)  
+    ## Adjust xticks of BEV    
+    ax_pv[0].set_ylabel("SHAP values [kWp/hh]", size=20)  
+    ax_bev[0].set_ylabel("SHAP values [\\%]", size=20)
 
     for ax_r in np.concatenate((ax_pv, ax_bev)):
         ax_r.axhline(y=0, color='black', linestyle='--', linewidth=1.5)
 
     fig.tight_layout()
-    fig.subplots_adjust(right=0.87, hspace=.4)
+    fig.subplots_adjust(right=0.925, hspace=.4, top=.9)
     # Add cartoons
     pv_image = Image.open(f"{__cartoon_path}/pv.png")
-    ax_pv_image = fig.add_axes([0.815, .75, 0.24, 0.24])
+    ax_pv_image = fig.add_axes([0.815, .775, 0.22, 0.22])
     ax_pv_image.imshow(pv_image)
     ax_pv_image.axis('off')
 
@@ -908,8 +939,12 @@ def plot_dependency_pv_and_bev(feature_count_threshold_pv=15,
 
     
     if save_fig:
-        fig_path = "plots/dependency_plots_pv_and_bev.pdf"
-        fig.savefig(fig_path, bbox_inches='tight')
+        if poster_version:
+            fig_path = "plots/dependency_plots_pv_and_bev_poster.png"
+            fig.savefig(fig_path, bbox_inches='tight', transparent=True)
+        else:
+            fig_path = "plots/dependency_plots_pv_and_bev.pdf"
+            fig.savefig(fig_path, bbox_inches='tight')
 
         fig.clear()
         plt.close(fig)
@@ -981,7 +1016,8 @@ def plot_all_dependencies_separate(feature_count_threshold_pv=15,
                                 feature=feat_r,
                                 x_label=xlabel_feat,
                                 y_label="", label_size=labelsize,
-                                ax=ax_arr_bev.flatten()[idx_plot])
+                                ax=ax_arr_bev.flatten()[idx_plot],
+                                scalefactor_y=100.)
         ax_arr_bev.flatten()[idx_plot].axhline(y=0, color='black', linestyle='--', linewidth=1.5)
         idx_plot += 1
         
@@ -991,10 +1027,10 @@ def plot_all_dependencies_separate(feature_count_threshold_pv=15,
 
     # Aesthetics
     for ax_r in ax_arr_pv[:,0].flatten():
-        ax_r.set_ylabel("SHAP", size=labelsize)
+        ax_r.set_ylabel("SHAP values [kWp/hh]", size=labelsize)
 
     for ax_r in ax_arr_bev[:,0].flatten():
-        ax_r.set_ylabel("SHAP", size=labelsize)
+        ax_r.set_ylabel("SHAP values [\\%]", size=labelsize)
 
     fig_pv.tight_layout()
     fig_pv.subplots_adjust(hspace=.5, right=0.925)
@@ -1034,6 +1070,7 @@ def plot_all_dependencies_separate(feature_count_threshold_pv=15,
 
     return
 
+
 def plot_interaction_heatmaps_pv_and_bev(feature_count_threshold_pv: int = 15, 
                                     feature_count_threshold_bev:int =15, 
                                     save_fig=False, run_evaluation=False, 
@@ -1057,11 +1094,13 @@ def plot_interaction_heatmaps_pv_and_bev(feature_count_threshold_pv: int = 15,
 
     plotting.heatmap_interactions(X_red_model_pv, interaction_values_pv, ax=ax_pv, 
                                   feature_name_dict=rename_tick_dict, plot_cbar=True,
-                                  fontsize=13, remove_diagonal=True)
+                                  fontsize=13, remove_diagonal=True,
+                                  cbar_label='mean $|\\text{SHAP interaction value}|$ [kWp/hh]')
     
     plotting.heatmap_interactions(X_red_model_bev, interaction_values_bev, ax=ax_bev,
                                   feature_name_dict=rename_tick_dict, plot_cbar=True,
-                                  fontsize=13, remove_diagonal=True)
+                                  fontsize=13, remove_diagonal=True, scalefactor_cbar=100.,
+                                  cbar_label='mean $|\\text{SHAP interaction value}|$ [\\%]')
 
     # Remove the diagonal
 
@@ -1090,7 +1129,7 @@ def plot_interaction_heatmaps_pv_and_bev(feature_count_threshold_pv: int = 15,
         plt.show()
 
 
-    return ax_pv, interaction_values_pv
+    return
 
 
 def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False, 
@@ -1099,7 +1138,8 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
                                                  feature_count_threshold_bev: int = 15,
                                                  target_type: str = 'pv', 
                                                  label_size: float = 14.,
-                                                 use_normalized: bool = True):
+                                                 use_normalized: bool = True,
+                                                 poster_version: bool = False):
     """Plot the interaction of different features using interaction values."""
 
     [X_red_model_pv, shap_values_pv, 
@@ -1121,6 +1161,8 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
         feature_inter1 = "share 4-person households"
         feature_inter2 = "global radiation"
 
+        unit_str = " [kWp/hh]"
+
     elif target_type == 'bev':
         X_red_model = X_red_model_bev
         interaction_values = interaction_values_bev
@@ -1130,19 +1172,30 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
         feature_inter1 = "AfD"
         feature_inter2 = "The Greens"
 
+        unit_str = ""
+
     else:
         raise ValueError("Please choose the target type to be either 'pv' or 'bev'.")
 
     # Plot
-    fig, [ax_tot, ax_main, ax_inter1, ax_inter2] = plt.subplots(1, 4, figsize=(16, 4),
+    if poster_version:
+        fig, [[ax_tot, ax_main], 
+              [ax_inter1, ax_inter2]] = plt.subplots(2, 2, figsize=(10, 8),
+                                                                )
+
+    else:
+        fig, [ax_tot, ax_main, ax_inter1, ax_inter2] = plt.subplots(1, 4, 
+                                                                    figsize=(16, 4),
                                                                 )
 
     name_feature = rename_tick_dict[feature] if feature in rename_tick_dict else feature
+    if poster_version:
+        name_feature = name_feature.replace("\n", " ")
     plotting.dependence_plot_main_effect(X=X_red_model,
                                          shap_values=shap_values,
                                          feature=feature,
                                          plot_main_effect=False,
-                                         y_label="SHAP Values",
+                                         y_label="SHAP values" + unit_str,
                                          x_lim=None, ax=ax_tot,
                                          x_label=name_feature,
                                          font_size=label_size)
@@ -1152,38 +1205,39 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
                                          feature=feature,
                                          plot_main_effect=True,
                                          x_lim=None, ax=ax_main,
-                                         x_label=rename_tick_dict[feature] \
-                                            if feature in rename_tick_dict else feature,
-                                         y_label="SHAP main effect",
+                                         x_label=name_feature,
+                                         y_label="SHAP main effect" + unit_str,
                                          font_size=label_size)
 
+    name_feat_inter1 = rename_tick_dict[feature_inter1] \
+                if feature_inter1 in rename_tick_dict else feature_inter1
+    if poster_version:
+        name_feat_inter1 = name_feat_inter1.replace("\n", " ")
     scatter, _ = plotting.dependence_plot_interactions(
             X=X_red_model,
             interaction_vals=interaction_values,
             feature=feature,
             interaction_feature=feature_inter1,
             ax=ax_inter1,
-            y_label="SHAP interaction value",
-            x_label=rename_tick_dict[feature] \
-                        if feature in rename_tick_dict else feature,
-            title=rename_tick_dict[feature_inter1] \
-                if feature_inter1 in rename_tick_dict else feature_inter1,
+            y_label="SHAP interaction value" + unit_str,
+            x_label=name_feature,
+            title=name_feat_inter1,
             cb_label=None,
             x_lim=None,
             y_lim=None,
             font_size=label_size)
 
+    name_feat_inter2 = rename_tick_dict[feature_inter2] \
+                if feature_inter2 in rename_tick_dict else feature_inter2
     plotting.dependence_plot_interactions(
             X=X_red_model,
             interaction_vals=interaction_values,
             feature=feature,
             interaction_feature=feature_inter2,
             ax=ax_inter2,
-            x_label=rename_tick_dict[feature] \
-                        if feature in rename_tick_dict else feature,
-            y_label="SHAP interaction value",
-            title=rename_tick_dict[feature_inter2] \
-                if feature_inter2 in rename_tick_dict else feature_inter2,
+            x_label=name_feature,
+            y_label="SHAP interaction value" + unit_str,
+            title=name_feat_inter2,
             cb_label=None,
             x_lim=None,
             y_lim=None,
@@ -1199,10 +1253,13 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
         addjust_bottom = 0.375
     else:
         addjust_bottom = 0.35
-    
-    fig.subplots_adjust(bottom=addjust_bottom, 
-                        right=0.925, wspace=0.5)
 
+    if poster_version:
+        fig.subplots_adjust(bottom=.2, 
+                        right=0.875, wspace=0.5, hspace=0.5)
+    else:
+        fig.subplots_adjust(bottom=addjust_bottom, 
+                            right=0.925, wspace=0.6)
     # Colorbar
     pos_ax_inter1 = ax_inter1.get_position()
     pos_ax_inter2 = ax_inter2.get_position()
@@ -1210,6 +1267,9 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
     offset_cbar = 0.2
     if "\n" in name_feature:
         offset_cbar += 0.05
+
+    if poster_version:
+        offset_cbar = 0.125
 
     cax = fig.add_axes([pos_ax_inter1.x0, pos_ax_inter2.y0 - offset_cbar, 
                         pos_ax_inter2.x1 - pos_ax_inter1.x0, 
@@ -1230,14 +1290,18 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
     pos_ax_tot = ax_tot.get_position()
     pos_ax_main = ax_main.get_position()
     middle_y = pos_ax_tot.y0 + (pos_ax_tot.y1 - pos_ax_tot.y0) / 2
-
-    offset_symbol = 0.005
+    middle_y_2 = pos_ax_inter1.y0 + (pos_ax_inter1.y1 - pos_ax_inter1.y0) / 2
+    
+    if poster_version:
+        offset_symbol = 0.01
+    else:
+        offset_symbol = 0.005
     pos_between_1 = [pos_ax_tot.x1 + offset_symbol, middle_y] 
     pos_between_2 = [pos_ax_main.x1 + offset_symbol, 
                      middle_y]
     pos_between_3 = [pos_ax_inter1.x1 + offset_symbol, 
-                     middle_y]
-    pos_leftmost = [pos_ax_inter2.x1 + offset_symbol , middle_y]
+                     middle_y_2]
+    pos_leftmost = [pos_ax_inter2.x1 + offset_symbol , middle_y_2]
 
     fig.text(pos_between_1[0], pos_between_1[1], r"$\boldsymbol{=}$",
              fontsize=30, horizontalalignment='left', verticalalignment='center')
@@ -1250,8 +1314,12 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
              horizontalalignment='left', fontsize=30, verticalalignment='center')
 
     if save_fig:
-        fig_path = f"plots/decomposed_shap_interactions_{target_type}.pdf"
-        fig.savefig(fig_path, bbox_inches='tight')
+        fig_path = f"plots/decomposed_shap_interactions_{target_type}"
+
+        if poster_version:
+            fig_path += "_poster"
+        fig.savefig(fig_path + ".pdf", bbox_inches='tight', 
+                    transparent=True)
 
         fig.clear()
         plt.close(fig)

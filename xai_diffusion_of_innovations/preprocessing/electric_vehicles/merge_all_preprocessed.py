@@ -5,7 +5,6 @@
 be used in the ML model."""
 
 import os
-import sys
 
 import numpy as np
 import pandas as pd
@@ -14,8 +13,7 @@ from xai_diffusion_of_innovations.preprocessing.electric_vehicles \
     import preprocess_inkar, preprocess_charging, preprocess_kba
 
 
-sys.path.append("code")
-from utils.utils import col_id_ma, col_name_ma
+from xai_diffusion_of_innovations.utils.utils import col_id_ma
 
 __intermediate_data_path = os.path.join("data", "intermediate_data", 
                                         "electric_vehicles")
@@ -24,7 +22,6 @@ __input_for_ml_path = os.path.join("data", "input")
 
 def preprocess_all_data(verbose: bool = True) -> None:
     """Preprocess all data for electric vehicles."""
-
 
     ## Preprocess data
     # KBA

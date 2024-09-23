@@ -7,18 +7,13 @@ This requires mapping the ARS (e.g., id of a Gemeindeverbund) to
 a common ars with the other datasets to subsequently merge the data."""
 
 import os
-import sys
 
-import numpy as np
 import pandas as pd
 
-import gzip
-import pickle
 
 from xai_diffusion_of_innovations.preprocessing.electric_vehicles.mapping_functions import map_to_common_ars
 
-sys.path.append("code")
-from utils.utils import col_id_ma, col_name_ma
+from xai_diffusion_of_innovations.utils.utils import col_id_ma, col_name_ma
 
 
 __raw_data_path = os.path.join("data", "raw_data")
@@ -52,7 +47,7 @@ def preprocess_kba(save_data: bool = True,
                    value = [0.0, float('NaN')], 
                    inplace = True)
     
-    # TODO explicitly set dtypes
+    # TODO explicitly set dtypes needed? I think not!
     # Generate ARS values
     ars_col = (df_kba['ars_land'] + df_kba['ars_rb'] + 
                df_kba['ars_kreis'] + df_kba['ars_vb'])
@@ -78,14 +73,17 @@ def preprocess_kba(save_data: bool = True,
                                             "ars_to_gemeindeverbund.xlsx"), 
                                converters={'ars': str})
     dict_ars_gemeindeverbund = {ars_value: gemeindeverbund_value for ars_value, 
-                            gemeindeverbund_value in zip(df_verbund.ars, 
+                                gemeindeverbund_value in zip(df_verbund.ars, 
                                                          df_verbund.Gemeindeverbund)}
 
     
-    df_kba.insert(1, col_name_ma, df_kba[col_id_ma].map(dict_ars_gemeindeverbund))
+    df_kba.insert(1, col_name_ma, 
+                  df_kba[col_id_ma].map(dict_ars_gemeindeverbund))
 
     # Map to common ARS
-    df_kba = map_to_common_ars(df_kba, "kba_mod", verbose=verbose)
+    df_kba = map_to_common_ars(df_kba, 
+                               "kba_mod", 
+                               verbose=verbose)
 
     # Aggregate
     df_agg = df_kba.groupby(col_id_ma).agg({'priv. gesamt': 'sum',

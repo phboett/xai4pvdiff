@@ -268,9 +268,10 @@ def hbar_shap_feature_imp(df_run_eval_input, features):
     return fig, ax
 
 
-def bar_shap_feature_imp(df_run_eval_input, features, ax=None, 
-                         nr_features_shown=None, feature_occurence_lims=None,
-                         cmap='coolwarm', labelsize=16):
+def bar_shap_feature_imp(df_run_eval_input: pd.DataFrame, features, ax: plt.axis=None, 
+                         nr_features_shown: int = None, feature_occurence_lims: tuple=None,
+                         cmap: str = 'coolwarm', labelsize: float =16., xlabel: str = None,
+                         scalefactor_x=1.):
     '''
     Create bar plot of mean SHAP feature importances over all ten training-test-splitting. The color of the bars
     indicates the number of reduced models a features occurs in.
@@ -331,12 +332,15 @@ def bar_shap_feature_imp(df_run_eval_input, features, ax=None,
         features = features[-nr_features_shown:]
 
     ax.barh(y=np.arange(len(features)),
-            width=widths,
-            xerr=xerr,
+            width=widths*scalefactor_x,
+            xerr=xerr*scalefactor_x,
             color=cmap(norm(df_run_eval.loc[features, col_occurences_feat])))
     ax.set_yticks(np.arange(len(features)))
     ax.set_yticklabels(features, size=12)
-    ax.set_xlabel('mean $| \\textrm{SHAP} |$', size=18)
+    if xlabel is None:
+        ax.set_xlabel('mean $| \\textrm{SHAP values} |$', size=labelsize)
+    else:
+        ax.set_xlabel(xlabel, size=labelsize)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.locator_params(axis='x', nbins=4)
@@ -350,7 +354,7 @@ def bar_shap_feature_imp(df_run_eval_input, features, ax=None,
 
     if ax is None:
         cbar = plt.colorbar(sm, shrink=.45, anchor=(-1.5, 0.1))
-        cbar.set_label('number of runs', rotation=270, labelpad=25, size=18)
+        cbar.set_label('number of runs', rotation=270, labelpad=25, size=labelsize)
         cbar.ax.tick_params(labelsize=labelsize)
 
     ax.tick_params(labelsize=labelsize)
@@ -369,7 +373,8 @@ def dependence_plot(X, shap_values, feature,
                     y_lim=None, x_lim=None, y_label=None, 
                     x_label=None, cb_label=None, title=None, 
                     scatter_color='royalblue',fig_size=(8, 5.5),
-                    ax=None, label_size=30, label_pad=10):
+                    ax=None, label_size: float = 30., label_pad: float = 10.,
+                    scalefactor_y: float = 1.):
     '''
     Create SHAP dependence plot of feature. Optional colouring according to interaction_feature.
     @param X: Input dataset to get indices of features
@@ -401,12 +406,12 @@ def dependence_plot(X, shap_values, feature,
         plt.plot(X[feature], lasso_coef * (X[feature] - lasso_mean) / lasso_std, color='darkgray', linestyle='-',
                  alpha=0.7,linewidth=2)
     if interaction_feature != None:
-        scatter = ax.scatter(x=X[feature], y=shap_values[:, feature_idx], 
+        scatter = ax.scatter(x=X[feature], y=scalefactor_y * shap_values[:, feature_idx], 
                              c=X[interaction_feature], cmap='coolwarm',
                              s=2, alpha=1)
     else:
         scatter = ax.scatter(x=X[feature], 
-                             y=shap_values[:, feature_idx], 
+                             y=scalefactor_y * shap_values[:, feature_idx], 
                              c=scatter_color, s=2, alpha=1)
     if x_lim != None:
         ax.set_xlim(x_lim)
@@ -452,7 +457,8 @@ def heatmap_interactions(X, interaction_values, feature_name_dict: dict  = None,
                          zero_main_effect: bool = True, 
                          ax: plt.axes = None, fontsize: float = 15., 
                          plot_cbar: bool = True, cmap: str='plasma', vlims: tuple = None,
-                         remove_diagonal: bool = False): 
+                         remove_diagonal: bool = False, cbar_label: str = None,
+                         scalefactor_cbar: float = 1.): 
     '''
     Create heat map of SHAP interaction values.
     @param X: Input data
@@ -486,10 +492,10 @@ def heatmap_interactions(X, interaction_values, feature_name_dict: dict  = None,
 
     if ax is None:
         fig = plt.figure(figsize=(12, 10))
-        ax = sns.heatmap(np.flip(mean_interactions), **kwargs)
+        ax = sns.heatmap(np.flip(mean_interactions) * scalefactor_cbar, **kwargs)
 
     else:
-        sns.heatmap(np.flip(mean_interactions), ax=ax, **kwargs)
+        sns.heatmap(np.flip(mean_interactions) * scalefactor_cbar, ax=ax, **kwargs)
     
     for _, spine in ax.spines.items():
         spine.set_visible(True)
@@ -502,7 +508,10 @@ def heatmap_interactions(X, interaction_values, feature_name_dict: dict  = None,
     if plot_cbar:
         cb_ax = ax.figure.axes[-1]
         cb_ax.tick_params(labelsize=16)
-        cb_ax.set_ylabel('mean $|\\text{interaction value}|$', fontsize=24)
+        if cbar_label is None:
+            cb_ax.set_ylabel('mean $|\\text{SHAP interaction value}|$', fontsize=24)
+        else:
+            cb_ax.set_ylabel(cbar_label, fontsize=24)
 
     ax.tick_params('y', rotation=0)
 

@@ -13,9 +13,7 @@ import re
 from difflib import SequenceMatcher
 from itertools import product
 
-import sys
-sys.path.append("code")
-from utils.utils import col_id_ma, col_name_ma
+from xai_diffusion_of_innovations.utils.utils import col_id_ma, col_name_ma
 
 __raw_data_path = os.path.join("data", "raw_data")
 
@@ -105,10 +103,12 @@ def map_to_common_ars(df_in: pd.DataFrame, sheet_name: str,
 
     df_internal = df_in.copy()
 
-    fpath_in = os.path.join(__raw_data_path , "bev_manual_changes.xlsx")
+    fpath_in = os.path.join(__raw_data_path , 
+                            "bev_manual_changes.xlsx")
     
     # Drop the ones that are not needed according to the mapping table
-    df_drop = pd.read_excel(fpath_in, sheet_name="discard", dtype=str, header=0)
+    df_drop = pd.read_excel(fpath_in, sheet_name="discard", 
+                            dtype=str, header=0)
     assert all(df_drop.ars_ref.apply(len) == 9), "String of ARS must have length 9."
 
     list_to_drop = df_drop.ars_ref.to_list()

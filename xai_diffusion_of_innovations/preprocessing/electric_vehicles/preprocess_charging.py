@@ -19,8 +19,7 @@ import datetime as dt
 
 from xai_diffusion_of_innovations.preprocessing.electric_vehicles.mapping_functions import map_to_common_ars
 
-sys.path.append("code")
-from utils.utils import col_id_ma, col_name_ma
+from xai_diffusion_of_innovations.utils.utils import col_id_ma, col_name_ma
 
 
 __raw_data_path = os.path.join("data", "raw_data")

@@ -28,6 +28,7 @@ def lasso_simulation(df, col_target_feature, train_sets, test_sets,
     @return: Dataframe with number of training-test splits, value of alpha, coefficients for all input features and values of
                 performance evaluation metrics
     '''
+    
     y_pv = df[col_target_feature]
     X = df.drop([col_id_ma, col_name_ma, col_target_feature], axis=1)
 
