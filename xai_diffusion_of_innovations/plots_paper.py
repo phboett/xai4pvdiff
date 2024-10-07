@@ -272,8 +272,8 @@ def plot_map_distribution_pv_and_bev(save_fig: bool = False,
     cbar = fig.colorbar(sm, cax=cax, orientation='horizontal', 
                         ticks=[min_target_value, max_target_value])
 
-    cbar.ax.set_xticklabels(["minimal value of\ntarget feature", 
-                             "maximal value of\ntag feature"],)
+    cbar.ax.set_xticklabels(["minimal value of\ntarget", 
+                             "maximal value of\ntarget"],)
     cbar.ax.tick_params(labelsize=label_size)
     cbar.solids.set(alpha=1.)
 
@@ -1163,6 +1163,8 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
 
         unit_str = " [kWp/hh]"
 
+        scale_factor = 1.
+
     elif target_type == 'bev':
         X_red_model = X_red_model_bev
         interaction_values = interaction_values_bev
@@ -1172,7 +1174,9 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
         feature_inter1 = "AfD"
         feature_inter2 = "The Greens"
 
-        unit_str = ""
+        unit_str = " [\\%]"
+
+        scale_factor = 100.
 
     else:
         raise ValueError("Please choose the target type to be either 'pv' or 'bev'.")
@@ -1192,7 +1196,7 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
     if poster_version:
         name_feature = name_feature.replace("\n", " ")
     plotting.dependence_plot_main_effect(X=X_red_model,
-                                         shap_values=shap_values,
+                                         shap_values=shap_values * scale_factor,
                                          feature=feature,
                                          plot_main_effect=False,
                                          y_label="SHAP values" + unit_str,
@@ -1201,7 +1205,7 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
                                          font_size=label_size)
 
     plotting.dependence_plot_main_effect(X=X_red_model,
-                                         shap_values=interaction_values,
+                                         shap_values=interaction_values * scale_factor,
                                          feature=feature,
                                          plot_main_effect=True,
                                          x_lim=None, ax=ax_main,
@@ -1215,7 +1219,7 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
         name_feat_inter1 = name_feat_inter1.replace("\n", " ")
     scatter, _ = plotting.dependence_plot_interactions(
             X=X_red_model,
-            interaction_vals=interaction_values,
+            interaction_vals=interaction_values * scale_factor,
             feature=feature,
             interaction_feature=feature_inter1,
             ax=ax_inter1,
@@ -1231,7 +1235,7 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
                 if feature_inter2 in rename_tick_dict else feature_inter2
     plotting.dependence_plot_interactions(
             X=X_red_model,
-            interaction_vals=interaction_values,
+            interaction_vals=interaction_values * scale_factor,
             feature=feature,
             interaction_feature=feature_inter2,
             ax=ax_inter2,
