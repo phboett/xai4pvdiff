@@ -364,32 +364,3 @@ if __name__ == '__main__':
     df_metadata.to_csv(meta_path + bev_path_tmp + norm_path_tmp + '.csv', 
                        index=False, sep=';')
 
-    if target_type == 'pv':
-        # reset random seed as analyses of entire PV stock and of new installations in time periods was performed separately
-        seed = 42
-        random.seed(seed)
-        np.random.seed(seed)
-
-        input_files = ['data/input/a_input_1991_2008.csv',
-                    'data/input/b_input_2009_2012.csv',
-                    'data/input/c_input_2012_2021.csv',
-                    'data/input/d_input_2022_2023.csv']
-        time_periods = ['a','b','c','d']
-
-        for time_period,file_path_cluster in zip(time_periods,input_files):
-            # id of run used for name of output files
-
-            df_perf, df_metadata = repeat_rfe(file_path_cluster, validation_size, test_size, repetitions=rep,
-                                              param_intervals=param_intervals_endpoints, n_hpo_iter=n_iter,
-                                              early_stopping_rounds=early_stopping_rounds, k_splits_cv=k_splits,
-                                              elimination_scheme=list_feat_to_elim,
-                                              label_cols=[col_id_ma, col_name_ma], 
-                                              target_feat=col_target,verbose=verbose,
-                                              norm_ls=norm_ls_in, drop_ls=drop_ls_in)
-            # file path on cluster
-            df_perf.to_csv(f'data/output/{time_period}_results_rfe{norm_path_tmp}.csv', 
-                           index=False, sep=';')
-            df_metadata.to_csv(f'data/output/{time_period}_metadata_rfe{norm_path_tmp}.csv', 
-                               index=False, sep=';')
-
-

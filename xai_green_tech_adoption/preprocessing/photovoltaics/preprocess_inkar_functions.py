@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*
+
 import pandas as pd
 import numpy as np
 import os, glob
@@ -150,6 +153,7 @@ def detect_missings(df, inds, cat_id, cat_ind, dependencies_dict, comments_dict,
     @return: dataframe listing the indicators with NaNs, the respective numbers of NaNs and dependencies of and
     comments on the inds
     '''
+    
     print(f'++++++++++ Checking {entire_df} dataframe of {types} +++++++++++\n')
     ind_missing_incl_count = identify_missing_ind(df, inds)
     ind_missing = [m[0] for m in ind_missing_incl_count]
@@ -171,7 +175,7 @@ def detect_missings(df, inds, cat_id, cat_ind, dependencies_dict, comments_dict,
     df_missings['Further comments'] = df_missings[cat_ind].apply(
         lambda ind: comments_dict[ind] if ind in comments_dict.keys() else np.nan)
     
-    display(df_missings)
+    print(df_missings)
 
     return df_missings
 
@@ -221,6 +225,7 @@ def search_substitutes_from_past(df_t, df_inkar, inds_missing, cat_id, cat_ind, 
                                                       ignore_index=True)
                         break
         substitution_values.update({ind: df_values_missing})
+
     return substitution_values
 
 
@@ -263,6 +268,7 @@ def insert_and_save_substitutes_from_past(df_preprocessed, df_inkar, inds_missin
             df_incl_substitutes.loc[df_incl_substitutes[ind_missing].isna(), ind_missing] = df_incl_substitutes[
                 f'{cat_value}_{ind_missing}']
             df_incl_substitutes.drop([f'{cat_value}_{ind_missing}'], axis=1, inplace=True)
+
     return df_incl_substitutes
 
 def search_subs_higher_level_c(df_preprocessed, inds_missing, cat_state, cat_value):

@@ -34,7 +34,6 @@ def lasso_simulation(df, col_target_feature, train_sets, test_sets,
 
     df_lasso_perf = pd.DataFrame()
     for run in tqdm(train_sets, disable=not show_progress, desc="Runs"):
-        print(f'run: {run}')
         X_train = X.iloc[train_sets[run], :]
         X_test = X.iloc[test_sets[run], :]
         y_train = y_pv.iloc[train_sets[run]]
@@ -97,9 +96,14 @@ if __name__ == '__main__':
 
     pd.options.display.float_format = '{:20,.17f}'.format
 
+    
     fpath_gbt_results = 'data/output/metadata_rfe'
     if target_type == 'bev':
         fpath_gbt_results += '_bev'
+
+    if len(norm_ls) > 0:
+        fpath_gbt_results += '_norm'
+
     df_metadata_gbt = pd.read_csv(fpath_gbt_results + '.csv', sep=';')
     df_metadata_gbt = prepare_metadata_dataframe(df_metadata=df_metadata_gbt,
                                                  idx_sets=[col_idx_train, col_idx_val, col_idx_test])
@@ -154,7 +158,7 @@ if __name__ == '__main__':
         fpath_lasso_test += '_bev'
         fpath_lasso_large_alpha_test += '_bev'
 
-    if len(norm_ls_in) > 0:
+    if len(norm_ls) > 0:
         fpath_lasso_test += '_norm'
         fpath_lasso_large_alpha_test += '_norm'
 
