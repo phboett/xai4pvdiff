@@ -1342,7 +1342,7 @@ def plot_all_figures():
     # Figure 1: Target distribution on a map of Germany.
     plot_map_distribution_pv_and_bev(save_fig=True)
 
-    # Figure 2
+    # Figure 2: Method overview parts
     plot_separate_parts_method_figure(save_fig=True)
 
     # Figure 3: Performance of the recursive GBT
