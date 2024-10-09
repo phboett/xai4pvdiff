@@ -23,9 +23,9 @@ All raw data is openly accessible. The following table gives an overview over al
 |Household sizes|Census 2011 by Federal Statistical Office and the Statistical Regional Offices|14/12/2022|Datenlizenz Deutschland - Namensnennung - Version 2.0|https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/DemografischeGrunddaten/csv\_HaushalteFamilien.zip?\_\_blob=publicationFile\&v=2|
 |Various descriptive features|INKAR database by the German Federal Institute for Researchon Building, Urban Affairs and Spatial Development|02/09/2022|Datenlizenz Deutschland - Namensnennung - Version 2.0|https://www.bbr-server.de/imagemap/inkar/download/inkar_2021.zip|
 |Results of election for the Bundestag in 2017|Regional Database by Federal Statistical Office and the Statistical Regional Offices|09/11/2022|Datenlizenz Deutschland - Namensnennung - Version 2.0|https://www.regionalstatistik.de/genesis//online?operation=table&code=14111-01-03-5&bypass=true&levelindex=0&levelid=1685362760357#abreadcrumb|
-|Changes of AGS keys of municipalities considered for PV analysis|Federal Statistical Office|04/01/2023|Reproduction and distribution, even in part, is permitted with citation of the source.|https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Namens-Grenz-Aenderung/namens-grenz-aenderung.html|
-Regional changes considered in BEV analysis|||||
-|Geographic data to display maps|Federal Agency for Cartogravphy and Geodesy|27/01/2023|Datenlizenz Deutschland - Namensnennung - Version 2.0|https://daten.gdz.bkg.bund.de/produkte/vg/vg250_ebenen_1231/2020/vg250_12-31.gk3.shape.ebenen.zip|
+|Changes of AGS keys of municipalities|Federal Statistical Office|04/01/2023|Reproduction and distribution, even in part, is permitted with citation of the source.|https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Namens-Grenz-Aenderung/namens-grenz-aenderung.html|
+|Geographic data to display maps of municipalities|Federal Agency for Cartogravphy and Geodesy|27/01/2023|Datenlizenz Deutschland - Namensnennung - Version 2.0|https://daten.gdz.bkg.bund.de/produkte/vg/vg250_ebenen_1231/2020/vg250_12-31.gk3.shape.ebenen.zip|
+|Geographic data to display maps of municipal aasociations|Federal Agency for Cartogravphy and Geodesy||Datenlizenz Deutschland - Namensnennung - Version 2.0||
 |
 
 ### Preprocessing Data
