@@ -6,6 +6,8 @@ We implemented the analysis in Python. All requirements are given in *requiremen
 
 ## Installation 
 
+We implemented the analysis in Python. All requirements are given in *requirements.txt*.
+
 ## Data
 
 ### Raw Data
@@ -20,7 +22,7 @@ Three publicly available data sources where used in this project.
 The data is supposed to be placed in raw_data ??
 
 ### Preprocessing Data
-The scripts and jupyter notebooks to preprocess the raw data can be found in [](). 
+The scripts and jupyter notebooks to preprocess the raw data can be found in submodule [preprocessing](./xai_green_tech_adoption/preprocessing/). 
 The preprocessed data will be placed in the folder ??, which is the input for the subsequent analysis using XAI (e.g., **gradient boosted tree models** and **Shapely Additive Values**).
 
 ## XAI
@@ -30,3 +32,4 @@ The pipelines
 ### Visualizing the results
 
 The plots presented in the article that is currently under review, can be found in [plots_paper.py](./xai_green_tech_adoption/plots_paper.py). The last function is a meta function that produces all plots if required output data of the XAI pipeline was produced before.
+
