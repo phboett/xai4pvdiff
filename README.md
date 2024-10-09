@@ -51,7 +51,7 @@ In addition to the preprocessed input data, the output of the GBT and LASSO simu
 
 ### Analyses and visualizing the results
 
-The plots presented in the article that is currently under review, can be found in [plots_paper.py](./xai_green_tech_adoption/plots_paper.py). The last function is a meta function that produces all plots if required output data of the XAI pipeline was produced before. All analyses and visualizations are based on the output of the GBT and LASSO simulations given in the *data/output/* folder. The folders 
+The plots presented in the article that is currently under review, can be found in [plots_paper.py](./xai_green_tech_adoption/plots_paper.py). The last function is a meta function that produces all plots if required output data of the XAI pipeline was produced before. The Jupyter notebook [analysis_lasso_model.ipynb](./xai_green_tech_adoption/shap_analysis/analysis_lasso_model.ipynb) implements analyses of the LASSO simluations as a baseline comparison. All analyses and visualizations are based on the output of the GBT and LASSO simulations given in the *data/output/* folder. 
 
 In order to plot the maps, we need additional data. The folder *maps* gives geographic data of municipalities (the data source is provided in table above) and the folder *intermediate_data* contains a mapping *mapping_municipalities_2000_2019.csv* used to map municipalities identified by their AGS key to the respective municipal associations identified by their ARS key. The mapping takes into account all changes in AGS between 2000 and 2019 (data source: see table).
 
