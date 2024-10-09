@@ -14,16 +14,17 @@ We implemented the analysis in Python. All requirements are given in *requiremen
 
 Three publicly available data sources where used in this project. 
 
-1. Marktstammdatenregister: data on PV distribution provided by Germany's Bundesnetzagentur. It is available at this [link]()
+1. Marktstammdatenregister: data on PV distribution provided by Germany's Bundesnetzagentur. It is available at this [link]().
 2. INKAR: Socio-Economic data provided by the 
 3. KBA: data on the distribution of different types of vehicles (BEV, combustible engines, ..) provided by the Kraftfahrtbundesamt (German Federal Motor Vehicles and Transport Authority) which is available at this [link]().
-4. Voting data: results of local elections provided by which is available at ()
+4. Voting data: results of local elections provided by which is available at this [link]().
 
 The data is supposed to be placed in raw_data ??
 
 ### Preprocessing Data
 The scripts and jupyter notebooks to preprocess the raw data can be found in submodule [preprocessing](./xai_green_tech_adoption/preprocessing/). 
 The preprocessed data will be placed in the folder ??, which is the input for the subsequent analysis using XAI (e.g., **gradient boosted tree models** and **Shapely Additive Values**).
+Note, that the photovolatic preprocessing is run first, since this prepares most of the socio-economic data.
 
 ## XAI
 
