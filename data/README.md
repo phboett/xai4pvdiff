@@ -1,5 +1,0 @@
-# README
-
-This folder contains the input data to be analysed and output of all GBT and LASSO simulations. All analyses presented in the paper are based on these outputs. For each GBT simulation, we generated a file comprising the results of the simulation such as the performances and features included in all GBT models (*\*results_rfe.csv*). We provide metadata on simulations in additional files (*\*metadata_rfe.csv*). These include e.g. the intervals chosen for the hyperparameter optimization. We performed to simulation runs for the LASSO models focussing on different values of the tuning parameter alpha. The results of the simulation are given in *benchmarking_lasso.csv* and *benchmarking_lasso_large_alpha.csv*. The file *Data_Timeseries_PV_Stock.csv* contains the data displayed in figure 7a. The folder *intermediate_data* contains the mapping of municipalities to municipality associations taking into account changes in AGS between 2000 and 2019 (*mapping_municipalities_2000_2019.csv*). The folder *maps* contains the shape files used to plot the maps displayed in figure 1.
-
-Raw data is available upon request. 
