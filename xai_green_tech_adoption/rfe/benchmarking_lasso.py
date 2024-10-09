@@ -1,5 +1,10 @@
 import sys
 import os
+
+if __name__ == '__main__':
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
+
+
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Lasso 
