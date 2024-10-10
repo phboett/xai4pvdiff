@@ -38,7 +38,8 @@ def lasso_simulation(df, col_target_feature, train_sets, test_sets,
     X = df.drop([col_id_ma, col_name_ma, col_target_feature], axis=1)
 
     df_lasso_perf = pd.DataFrame()
-    for run in tqdm(train_sets, disable=not show_progress, desc="Runs"):
+    for idx_run, run in tqdm(enumerate(train_sets), 
+                             disable=not show_progress, desc="Runs"):
         X_train = X.iloc[train_sets[run], :]
         X_test = X.iloc[test_sets[run], :]
         y_train = y_pv.iloc[train_sets[run]]
@@ -73,6 +74,10 @@ def lasso_simulation(df, col_target_feature, train_sets, test_sets,
                                       col_mape_test: mean_absolute_percentage_error(y_true=y_test, y_pred=y_test_pred),
                                       **coef_dict}])
             df_lasso_perf = pd.concat([df_lasso_perf, df_alpha], ignore_index=True)
+
+            # FIXME: remove break
+            if idx_run >= 2:
+                break
 
     return df_lasso_perf
 
@@ -167,7 +172,12 @@ if __name__ == '__main__':
         fpath_lasso_test += '_norm'
         fpath_lasso_large_alpha_test += '_norm'
 
-    df_lasso_perf.to_csv(fpath_lasso_test + '.csv', sep=';', index=False,
+    """df_lasso_perf.to_csv(fpath_lasso_test + '.csv', sep=';', index=False,
                          float_format='{:f}'.format)
     df_lasso_perf_large.to_csv(fpath_lasso_large_alpha_test + '.csv',
-                               sep=';', index=False, float_format='{:f}'.format)
+                               sep=';', index=False, float_format='{:f}'.format)"""
+    
+    # output as pickled object
+
+    df_lasso_perf.to_pickle(fpath_lasso_test + '.pklz', compression='gzip')
+    df_lasso_perf_large.to_pickle(fpath_lasso_large_alpha_test + '.pklz', compression='gzip')
