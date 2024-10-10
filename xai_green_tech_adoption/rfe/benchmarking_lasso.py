@@ -42,7 +42,8 @@ def lasso_simulation(df, col_target_feature, train_sets, test_sets,
 
     df_lasso_perf = pd.DataFrame()
     for idx_run, run in tqdm(enumerate(train_sets), 
-                             disable=not show_progress, desc="Runs"):
+                             disable=not show_progress, desc="Runs", 
+                             total=len(train_sets)):
         X_train = X.iloc[train_sets[run], :]
         X_test = X.iloc[test_sets[run], :]
         y_train = y_pv.iloc[train_sets[run]]
