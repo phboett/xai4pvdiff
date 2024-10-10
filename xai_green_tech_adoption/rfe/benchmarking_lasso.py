@@ -79,10 +79,6 @@ def lasso_simulation(df, col_target_feature, train_sets, test_sets,
                                       **coef_dict}])
             df_lasso_perf = pd.concat([df_lasso_perf, df_alpha], ignore_index=True)
 
-            # FIXME: remove break
-            if idx_run >= 2:
-                break
-
     return df_lasso_perf
 
 
