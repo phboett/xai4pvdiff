@@ -511,3 +511,8 @@ features_norm_to_population_ls = ['employees at place of work',
                          'unemployed', 'population of working age',]
                          
 features_norm_to_population_bev_ls = ['chargingstations_before_2023'] 
+
+
+#### Post to mattermost if run is finished
+
+mattermost_url = None

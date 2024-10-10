@@ -15,12 +15,15 @@ import shap
 
 from tqdm import tqdm
 
+from datetime import datetime
+
 from copy import deepcopy
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
 from xai_green_tech_adoption.utils.utils import *
+from xai_green_tech_adoption.utils import post_to_mattermost
 
 
 def random_search_cv(train_set, val_set, param_intervals, n_iter, 
@@ -273,6 +276,8 @@ def repeat_rfe(file_path: str, test_size: float, validation_size: float,
 
 if __name__ == '__main__':
 
+    t_start = datetime.now()
+    
     number_of_input_arguments = len(sys.argv) - 1
     if number_of_input_arguments != 2 or sys.argv[1] not in ['pv', 'bev']:
         raise IOError('Please choose the type of target (i.e., {pv, bev}) to be run.')    
@@ -336,11 +341,13 @@ if __name__ == '__main__':
 
     elif target_type == 'bev':
         #list_feat_to_elim = 11 * [10] + 9 * [5] + 15 * [2] + 13 * [1]
-        list_feat_to_elim = 11 * [10] + 9 * [5] + 12 * [2] + (19 - len(drop_ls_in)) * [1] #FIXME to get to 15 features
+        list_feat_to_elim = 11 * [10] + 9 * [5] + 12 * [2] + (19 - len(drop_ls_in)) * [1] #to get to 15 features
         # file path of input data set
         file_path = 'data/input/bev_input.csv'
         # file path on cluster
         col_target = col_bev_per_vehicle
+
+    t_start = datetime.now()
 
     df_perf, df_metadata = repeat_rfe(file_path, validation_size, test_size, repetitions=rep,
                                       param_intervals=param_intervals_endpoints, n_hpo_iter=n_iter,
@@ -367,4 +374,7 @@ if __name__ == '__main__':
                    index=False, sep=';')
     df_metadata.to_csv(meta_path + bev_path_tmp + norm_path_tmp + '.csv', 
                        index=False, sep=';')
-
+    if mattermost_url is not None:
+        dtime = (t_start - datetime.now()).total_seconds() / 3600
+        message_to_post = 'RFE for ' + target_type + f' finished at {datetime.now()} (took {dtime} h)'
+        post_to_mattermost.post_message('RFE for ' + target_type + ' finished.')

@@ -16,7 +16,10 @@ import random
 from tqdm import tqdm
 
 from xai_green_tech_adoption.utils.utils import *
+from xai_green_tech_adoption.utils import post_to_mattermost
 from xai_green_tech_adoption.shap_analysis.supporting_functions import *
+
+from datetime import datetime
 
 
 def lasso_simulation(df, col_target_feature, train_sets, test_sets, 
@@ -84,6 +87,7 @@ def lasso_simulation(df, col_target_feature, train_sets, test_sets,
 
 if __name__ == '__main__':
 
+    t_start = datetime.now()
     number_of_input_arguments = len(sys.argv) - 1
     if number_of_input_arguments != 2 or sys.argv[1] not in ['pv', 'bev']:
         raise IOError('Please choose the type of target ' + 
@@ -181,3 +185,8 @@ if __name__ == '__main__':
 
     df_lasso_perf.to_pickle(fpath_lasso_test + '.pklz', compression='gzip')
     df_lasso_perf_large.to_pickle(fpath_lasso_large_alpha_test + '.pklz', compression='gzip')
+
+    if mattermost_url is not None:
+        dtime = (t_start - datetime.now()).total_seconds() / 3600
+        message_to_post = 'RFE for ' + target_type + f' finished at {datetime.now()} (took {dtime} h)'
+        post_to_mattermost.post_message('RFE for ' + target_type + ' finished.')
