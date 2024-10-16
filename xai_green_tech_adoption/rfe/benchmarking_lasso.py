@@ -23,7 +23,7 @@ from datetime import datetime
 
 
 def lasso_simulation(df, col_target_feature, train_sets, test_sets, 
-                     alpha_range, show_progress: bool = True):
+                     alpha_range, show_progress: bool = True, max_iter: int = 20000):
     '''
     For each value of alpha contained in the list alpha_range a lasso model is trained and tested.
     @param df: dataset of input features and target feature
@@ -33,6 +33,9 @@ def lasso_simulation(df, col_target_feature, train_sets, test_sets,
     @param test_sets: dictionary with indices of test set (joint training and validation set from GBT simulation) for
                         each split
     @param alpha_range: list of alpha values. A lasso model is created, trained and tested for each value of alpha.
+    @param show_progress: if True, progress bar is shown
+    @param max_iter: maximum number of iterations for lasso model
+
     @return: Dataframe with number of training-test splits, value of alpha, coefficients for all input features and values of
                 performance evaluation metrics
     '''
@@ -56,7 +59,7 @@ def lasso_simulation(df, col_target_feature, train_sets, test_sets,
         X_test_scaled = std_scaler.transform(X_test)
 
         for alpha in alpha_range:
-            lasso = Lasso(alpha=alpha, tol=0.001, max_iter=2000)
+            lasso = Lasso(alpha=alpha, tol=0.001, max_iter=max_iter)
             lasso.fit(X_train_scaled, y_train)
             y_train_pred = lasso.predict(X_train_scaled)
             y_test_pred = lasso.predict(X_test_scaled)
@@ -179,11 +182,10 @@ if __name__ == '__main__':
                                sep=';', index=False, float_format='{:f}'.format)"""
     
     # output as pickled object
-
     df_lasso_perf.to_pickle(fpath_lasso_test + '.pklz', compression='gzip')
     df_lasso_perf_large.to_pickle(fpath_lasso_large_alpha_test + '.pklz', compression='gzip')
 
     if mattermost_url is not None:
         dtime = (t_start - datetime.now()).total_seconds() / 3600
         message_to_post = 'RFE for ' + target_type + f' finished at {datetime.now()} (took {dtime} h)'
-        post_to_mattermost.post_message('RFE for ' + target_type + ' finished.')
+        post_to_mattermost.post_message('RFE for ' + target_type + ' finished.', mattermost_url)

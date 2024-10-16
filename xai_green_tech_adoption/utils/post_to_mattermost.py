@@ -7,8 +7,8 @@ import requests
 import json
 
 
-def post_message(message,
-                 url):
+def post_message(message: str,
+                 url: str) -> None:
     """Post the 'message' to mattermost"""
     
     payload = {"text": str(message)}

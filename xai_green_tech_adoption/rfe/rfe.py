@@ -377,4 +377,4 @@ if __name__ == '__main__':
     if mattermost_url is not None:
         dtime = (t_start - datetime.now()).total_seconds() / 3600
         message_to_post = 'RFE for ' + target_type + f' finished at {datetime.now()} (took {dtime} h)'
-        post_to_mattermost.post_message('RFE for ' + target_type + ' finished.')
+        post_to_mattermost.post_message('RFE for ' + target_type + ' finished.', mattermost_url)

@@ -15,10 +15,10 @@ All raw data is openly accessible. The following table gives an overview over al
 | Feature | Source | Access date | License | Link | 
 | ---- | ------ | ---- |-------------|---------|
 |Photovoltaics | Marktstammdatenregister by Bundesnetzagentur ('Gesamtdatenauszug vom Vortag') | 16/11/2022|Datenlizenz Deutschland - Namensnennung - Version 2.0|https://www.marktstammdatenregister.de/MaStR/Datendownload|
-|Data on the distribution of different types of vehicles|German Federal Motor Vehicles and Transport Authority||||
+|Data on the distribution of different types of vehicles|German Federal Motor Vehicles and Transport Authority||Datenlizenz Deutschland – Namensnennung – Version 2.0 | https://www.kba.de/DE/Statistik/Produktkatalog/produkte/Fahrzeuge/fz27_b_uebersicht.html?nn=3514348 |
 |Gridded solar radiation|Joint research Centre of the European Commission|16/12/2022|Creative Commons Attribution 4.0 International (CC BY 4.0)|https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis/pvgis-data-download/sarah-solar-radiation_en|
 |Geographical middlepoints of municipalities (used to determine solar radiation observed in municipalities)|Federal Statistical Office and the Statistical Regional Offices|16/12/2022|Reproduction and distribution, even in part, is permitted with citation of the source.|https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GVAuszugJ/31122019_Auszug_GV.html|
-|Charging stations|||||
+|Charging stations| Bundesnetzagentur |1.5.2023 | CC BY-ND 3.0 DE  | https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Ladesaeulenkarte |
 |Ownership ratio|Census 2011 by Federal Statistical Office and the Statistical Regional Offices|14/12/2022|Datenlizenz Deutschland - Namensnennung - Version 2.0|https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/DemografischeGrunddaten/csv\_GebaudeWohnungen.zip?\_\_blob=publicationFile\&v=2|
 |Household sizes|Census 2011 by Federal Statistical Office and the Statistical Regional Offices|14/12/2022|Datenlizenz Deutschland - Namensnennung - Version 2.0|https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/DemografischeGrunddaten/csv\_HaushalteFamilien.zip?\_\_blob=publicationFile\&v=2|
 |Various descriptive features|INKAR database by the German Federal Institute for Researchon Building, Urban Affairs and Spatial Development|02/09/2022|Datenlizenz Deutschland - Namensnennung - Version 2.0|https://www.bbr-server.de/imagemap/inkar/download/inkar_2021.zip|
@@ -45,7 +45,7 @@ The preprocessed input data can be found online under this [link](https://fz-jue
 ## XAI Analysis
 The pipeline implementing the recursive feature elimination for the GBT models for the BEVs and PV can be found in [rfe.py](./xai_green_tech_adoption/rfe/rfe.py). For each GBT simulation, we save the results of the simulation comprising the performances and features included in all GBT models (*data/output/results_rfe\*.csv*). We provide metadata on simulations in additional files (*data/output/metadata_rfe\*.csv*). These include e.g. the intervals chosen for the hyperparameter optimization. 
 
-For a baseline analysis, we performed simulation runs for LASSO models focussing on different values of the tuning parameter alpha. The results of the simulation are given in *benchmarking_lasso.csv* and *benchmarking_lasso_large_alpha.csv* The The LASSO simulation implemented as a baseline analysis is given in [benchmarking_lasso.py] (./xai_green_tech_adoption/rfe/benchmarking_lasso.py).
+For a baseline analysis, we performed simulation runs for LASSO models focussing on different values of the tuning parameter alpha. The results of the simulation are given in *benchmarking_lasso.csv* and *benchmarking_lasso_large_alpha.csv* The The LASSO simulation implemented as a baseline analysis is given in [benchmarking_lasso.py](./xai_green_tech_adoption/rfe/benchmarking_lasso.py).
 
 In addition to the preprocessed input data, the output of the GBT and LASSO simulations can be found online under this [link](https://fz-juelich.sciebo.de/s/NTFUvDD0Sx7sTac). The *input* and *output* folder should be placed into the *data* folder.
 
