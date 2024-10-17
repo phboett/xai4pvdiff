@@ -1380,24 +1380,24 @@ def plot_performance_large_alpha(save_fig: bool = False, alpha_inv_max = 10100):
     fig, ax = plt.subplots(3, 1, figsize=(8, 10), sharex='all')
 
     plotting.plot_performance_lasso(df_lasso_mean_perf, 
-                                           perf_metric_train=col_r2_train,
-                                           perf_metric_test=col_r2_test, ax=ax[0],
-                                           x_max=alpha_inv_max)
+                                    perf_metric_train=col_r2_train,
+                                    perf_metric_test=col_r2_test, ax=ax[0],
+                                    x_max=alpha_inv_max)
     
     plotting.plot_performance_lasso(df_lasso_mean_perf, perf_metric_train=col_mae_train,
-                                             perf_metric_test=col_mae_test, ax=ax[1],
-                                             x_max=alpha_inv_max)
+                                    perf_metric_test=col_mae_test, ax=ax[1],
+                                    x_max=alpha_inv_max)
     
     plotting.plot_count_non_zero_coef(df_lasso_mean_perf, col_alpha,
-                                             x_max=alpha_inv_max, ax=ax[2],
-                                             color="#d95f02")
+                                      x_max=alpha_inv_max, ax=ax[2],
+                                      color="#d95f02")
     
 
     # Aesthetics
     ax[0].set_ylim(0.5, 0.9)
     ax[1].set_ylim(0.1, 0.14)
     ax[2].set_ylim(0, 170)
-
+    ax[0].set_xlim(0, alpha_inv_max)
 
     legend = ax[0].legend(numpoints=None, fontsize=20)
     for leg_hdls in legend.legend_handles:
@@ -1405,12 +1405,17 @@ def plot_performance_large_alpha(save_fig: bool = False, alpha_inv_max = 10100):
 
     ax[0].set_ylabel("mean $R^2$ score", size=20)
     ax[1].set_ylabel("mean MAE", size=20)
-    ax[2].set_ylabel("number of features with\nnon-zero coefficients", size=20)
+    ax[2].set_ylabel("number of features\nwith non-zero coefficients", size=20)
     ax[-1].set_xlabel("$\\alpha^{-1}$", size=26)
 
     for ax_r in ax:
         ax_r.tick_params(labelsize=14)
     
+    label_ls = ["(a)", "(b)", "(c)", "(d)"]
+    for idx, ax_r in enumerate(ax):
+        ax_r.text(-0.15, 1.1, label_ls[idx], 
+                  transform=ax[idx].transAxes, fontsize=20)
+
 
     if save_fig:
         fig_path = "plots/SI_lasso_performance_large_alpha.pdf"
@@ -1445,22 +1450,19 @@ def plot_performance_and_coefficients_small_alpha(save_fig: bool = False,
     fig_coeff, ax_coeff = plt.subplots(figsize=(10, 6))
 
     plotting.plot_performance_lasso(df_lasso_mean_perf, 
-                                           perf_metric_train=col_r2_train,
-                                           perf_metric_test=col_r2_test, ax=ax[0],
-                                           x_max=alpha_inv_max)
+                                    perf_metric_train=col_r2_train,
+                                    perf_metric_test=col_r2_test, ax=ax[0],
+                                    x_max=alpha_inv_max)
 
     plotting.plot_count_non_zero_coef(df_lasso_mean_perf, col_alpha,
-                                             x_max=alpha_inv_max, ax=ax[1],
-                                             color="#d95f02")
+                                      x_max=alpha_inv_max, ax=ax[1],
+                                      color="#d95f02")
     
 
     plotting.plot_mean_coefficients(df_lasso_mean_perf, feature_list=feature_list,
                                     ax=ax_coeff, x_max=alpha_inv_max, 
                                     threshold_inv_alpha=threshold_inverse_alpha, 
                                     feature_rename_dict=rename_tick_dict)
-    
-    
-    
     
     for ax_r in ax:
         ax_r.axvline(x=threshold_inverse_alpha, 
@@ -1475,7 +1477,7 @@ def plot_performance_and_coefficients_small_alpha(save_fig: bool = False,
         leg_hdls._sizes = [80]
 
     ax[0].set_ylabel("mean $R^2$ score", size=20)
-    ax[1].set_ylabel("number of features with\nnon-zero coefficients", size=20)
+    ax[1].set_ylabel("number of features\nwith non-zero coefficients", size=20)
     ax[-1].set_xlabel("$\\alpha^{-1}$", size=26)
 
     for ax_r in ax:
@@ -1494,10 +1496,18 @@ def plot_performance_and_coefficients_small_alpha(save_fig: bool = False,
     fig_coeff.subplots_adjust(right=0.725)
     
     
+    label_ls = ["(a)", "(b)", "(c)", "(d)"]
+    for idx, ax_r in enumerate(ax):
+        ax_r.text(-0.15, 1.1, label_ls[idx], 
+                  transform=ax[idx].transAxes, fontsize=20)
+        
+    ax_coeff.text(-.075, 1.0175, label_ls[2], 
+                  transform=ax_coeff.transAxes, fontsize=20)
+        
     if save_fig:
         fpath_fig = "plots/SI_lasso_performance_small_alpha.pdf"
 
-        plt.savefig(fpath_fig, bbox_inches='tight')
+        fig.savefig(fpath_fig, bbox_inches='tight')
         fig.clear()
         plt.close(fig)
 
