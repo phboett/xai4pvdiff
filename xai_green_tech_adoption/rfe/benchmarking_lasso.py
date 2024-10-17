@@ -166,8 +166,8 @@ if __name__ == '__main__':
                                      test_sets=test_indices, alpha_range=alpha_range)
 
     fpath_out_dir = 'data/output'
-    fpath_lasso_test = fpath_out_dir + '/benchmarking_lasso_test'
-    fpath_lasso_large_alpha_test = fpath_out_dir + '/benchmarking_lasso_large_alpha_test'
+    fpath_lasso_test = fpath_out_dir + '/benchmarking_lasso'
+    fpath_lasso_large_alpha_test = fpath_out_dir + '/benchmarking_lasso_large_alpha'
     if target_type == 'bev':
         fpath_lasso_test += '_bev'
         fpath_lasso_large_alpha_test += '_bev'
@@ -187,5 +187,5 @@ if __name__ == '__main__':
 
     if mattermost_url is not None:
         dtime = (t_start - datetime.now()).total_seconds() / 3600
-        message_to_post = 'RFE for ' + target_type + f' finished at {datetime.now()} (took {dtime} h)'
-        post_to_mattermost.post_message('RFE for ' + target_type + ' finished.', mattermost_url)
+        message_to_post = 'Benchmarking ' + target_type + f' finished at {datetime.now()} (took {dtime} h)'
+        post_to_mattermost.post_message(message_to_post, mattermost_url)

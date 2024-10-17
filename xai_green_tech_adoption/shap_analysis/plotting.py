@@ -732,8 +732,11 @@ def bar_shap_reduced(X, shap_values, bar_color='royalblue',
         return
 
 
-def plot_performance_lasso(df_lasso_mean, perf_metric_train, perf_metric_test, x_max, fig_size=(9, 5),
-                                        y_min=0, y_max=0.9, threshold_inv_alpha=None, pos_leg_in_figure=True):
+def plot_performance_lasso(df_lasso_mean, perf_metric_train, perf_metric_test, 
+                           x_max=None, fig_size=(9, 5),
+                           y_min=0, y_max=0.9, threshold_inv_alpha=None, 
+                           pos_leg_in_figure=True,
+                           ax=None):
     '''
     Plot mean performance metric (R2 score, MAE, MAPE or MSE) over the inverse of alpha.
     @param df_lasso: dataframe with mean performances over all train-test-splits
@@ -742,44 +745,66 @@ def plot_performance_lasso(df_lasso_mean, perf_metric_train, perf_metric_test, x
     @param list_runs: list of all simulation runs
     @param run_red_model: number of simulation used for reduced model (in this case: 4th training-test-split)
     @param threshold_inv_alpha: threshold of inverse alpha to determine reduced model (if None, threshold will not be indicated)
+    @param fig_size: size of the figure
+    @param ax: (optional) axis to plot on. If 'None', a new figure will be produced.
     @return: figure instance with plot of coefficients
     '''
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=fig_size)
 
-    ax.scatter(x=1 / df_lasso_mean[col_alpha], y=df_lasso_mean[perf_metric_train], c='tab:blue', label='training set',
+    if ax is None:
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=fig_size)
+
+    ax.scatter(x=1 / df_lasso_mean[col_alpha], y=df_lasso_mean[perf_metric_train], 
+               c='tab:blue', label='training set',
                 s=1)
-    ax.scatter(x=1 / df_lasso_mean[col_alpha], y=df_lasso_mean[perf_metric_test], c='tab:green', label='test set', s=1)
+    ax.scatter(x=1 / df_lasso_mean[col_alpha], y=df_lasso_mean[perf_metric_test], 
+               c='tab:green', label='test set', s=1)
     ax.set_xlim((0, x_max))
     ax.set_ylim(y_min, y_max)
+
     if threshold_inv_alpha != None:
         ax.axvline(x=threshold_inv_alpha, color='darkred', linestyle='--')
-    if perf_metric_test == col_r2_test:
-        ax.set_ylabel(r'mean $R^2$ score', fontsize=16, loc='center')
-    elif perf_metric_test == col_mape_test:
-        ax.set_ylabel('mean mape', fontsize=16, loc='center')
-    elif perf_metric_test == col_mae_test:
-        ax.set_ylabel('mean mae ', fontsize=16, loc='center')
-    elif perf_metric_test == col_mse_test:
-        ax.set_ylabel('mean mse', fontsize=16, loc='center')
-    else:
-        raise ValueError('Unknown Performance Metric.')
-    ax.tick_params(labelsize=13)
-    ax.set_xlabel(r'$\alpha^{-1}$', fontsize=16)
-    if not pos_leg_in_figure:
-        fig_box = ax.get_position()
-        ax.set_position([fig_box.x0, fig_box.y0, fig_box.width * 0.7, fig_box.height])
-        ax.set_anchor('SW')
-        legend = ax.legend(loc='center left', bbox_to_anchor=(1.2, 0.5), markerscale=5, fontsize=12)
-    elif perf_metric_test == col_r2_test:
-        legend = ax.legend(loc='lower right', markerscale=5, fontsize=13)
-    else:
-        legend = ax.legend(loc='upper right', markerscale=5, fontsize=13)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    return fig, ax, legend
 
-def plot_count_non_zero_coef(df_lasso_input, col_alpha, x_max=None, y_min=None, y_max=None, threshold_inv_alpha=None,
-                        fig_size=None):
+    if ax is None:
+        if perf_metric_test == col_r2_test:
+            ax.set_ylabel(r'mean $R^2$ score', fontsize=16, loc='center')
+        elif perf_metric_test == col_mape_test:
+            ax.set_ylabel('mean mape', fontsize=16, loc='center')
+        elif perf_metric_test == col_mae_test:
+            ax.set_ylabel('mean mae ', fontsize=16, loc='center')
+        elif perf_metric_test == col_mse_test:
+            ax.set_ylabel('mean mse', fontsize=16, loc='center')
+        else:
+            raise ValueError('Unknown Performance Metric.')
+        
+        ax.tick_params(labelsize=13)
+        ax.set_xlabel(r'$\alpha^{-1}$', fontsize=16)
+
+        if not pos_leg_in_figure:
+            fig_box = ax.get_position()
+            ax.set_position([fig_box.x0, fig_box.y0, fig_box.width * 0.7, fig_box.height])
+            ax.set_anchor('SW')
+            legend = ax.legend(loc='center left', bbox_to_anchor=(1.2, 0.5), 
+                            markerscale=5, fontsize=12)
+        elif perf_metric_test == col_r2_test:
+            legend = ax.legend(loc='lower right', markerscale=5, fontsize=13)
+        else:
+            legend = ax.legend(loc='upper right', markerscale=5, fontsize=13)
+    
+    
+        # Aesthetics
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+
+        return fig, ax, legend
+    
+    else:  
+        return
+    
+
+def plot_count_non_zero_coef(df_lasso_input, col_alpha, 
+                             x_max=None, y_min=None, y_max=None, 
+                             threshold_inv_alpha=None,
+                             fig_size=None, ax=None, color='C1'):
     '''
     Plot mean number of non-zero features of all ten reduced lasso models over the inverse of alpha.
     @param df_lasso_input: dataframe giving results of simulations of lasso models, one row corresponds to one simulated
@@ -790,28 +815,43 @@ def plot_count_non_zero_coef(df_lasso_input, col_alpha, x_max=None, y_min=None, 
     @param y_max: (optional) maximum value of y-axis displayed
     @param threshold_inv_alpha: choice of the inverse of alpha of the reduced lasso model
     @param fig_size: size of the figure
+    @param ax: (optional) axis to plot on. If 'None', a new figure will be produced.
     @return: figure containing the plot
     '''
+
     df_lasso = df_lasso_input.copy()
-    if fig_size != None:
-        fig = plt.figure(figsize=fig_size)
-    else:
-        fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.step(x=1 / df_lasso[col_alpha], y=df_lasso[col_count_non_zero])
+
+    if ax is None:
+        if fig_size != None:
+            fig = plt.figure(figsize=fig_size)
+        else:
+            fig = plt.figure()
+        ax = fig.add_subplot(111)
+
+    ax.step(x=1 / df_lasso[col_alpha], 
+            y=df_lasso[col_count_non_zero], color=color)
+
     if threshold_inv_alpha != None:
         ax.axvline(x=threshold_inv_alpha, color='darkred', linestyle='--')
-    plt.ylabel('number of features with\nnon-zero coefficients', fontsize=14)
-    plt.yticks(fontsize=12)
-    if (y_min != None) & (y_max != None):
-        plt.ylim((0, 30))
-    plt.xlabel(r'$\alpha^{-1}$', fontsize=14)
-    plt.xticks(fontsize=12)
-    if x_max != None:
-        plt.xlim((0, x_max))
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    return fig
+
+    if ax is None:
+        plt.ylabel('number of features with\nnon-zero coefficients', fontsize=14)
+        plt.yticks(fontsize=12)
+        if (y_min != None) & (y_max != None):
+            plt.ylim((0, 30))
+        plt.xlabel(r'$\alpha^{-1}$', fontsize=14)
+        plt.xticks(fontsize=12)
+        if x_max != None:
+            plt.xlim((0, x_max))
+
+
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+
+        return fig
+    
+    else:
+        return
 
 
 def reduce_df_size(df, max_datapoints):
@@ -829,7 +869,9 @@ def reduce_df_size(df, max_datapoints):
     return df.iloc[idx_to_keep, :]
 
 
-def plot_mean_coefficients(df_lasso_mean, feature_list, x_max=None, threshold_inv_alpha=None):
+def plot_mean_coefficients(df_lasso_mean: pd.DataFrame, feature_list: list, 
+                           x_max: float = None, threshold_inv_alpha: float = None,
+                           ax: plt.axes=None, feature_rename_dict: dict = None):
     '''
     Plotting mean coefficients of lasso models over the inverse of alpha.
     @param df_lasso_mean: Dataframe giving mean results and mean coefficients of all simulation runs. One row
@@ -874,12 +916,16 @@ def plot_mean_coefficients(df_lasso_mean, feature_list, x_max=None, threshold_in
                           'CDU/CSU': 'votes CDU/CSU (conservative party)',
                           'other parties': 'votes other parties'
                           }
-    feature_labels = [feature_label_dict[feature] if feature in feature_label_dict else feature for feature in
+    
+    feature_labels = [feature_label_dict[feature] 
+                      if feature in feature_label_dict else feature for feature in
                       features_occurring_list]
+    
+    feature_label_colors = [feature_label_colors_dict[feature] 
+                            for feature in features_occurring_list]
 
-    feature_label_colors = [feature_label_colors_dict[feature] for feature in features_occurring_list]
-
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(1.5 * 7.3, 1.5 * 4))
+    if ax is None:
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(1.5 * 7.3, 1.5 * 4))
 
     color_map = plt.get_cmap('nipy_spectral')
 
@@ -887,22 +933,36 @@ def plot_mean_coefficients(df_lasso_mean, feature_list, x_max=None, threshold_in
     ax.set_prop_cycle('color', [color_map(idx / len(min_inverse_alpha)) for idx, _ in enumerate(min_inverse_alpha)])
 
     for idx, feature in enumerate(features_occurring_list):
-        ax.scatter(x=1 / df_lasso_mean[col_alpha], y=df_lasso_mean[feature], label=feature_labels[idx],
+        if feature_rename_dict is not None:
+            label_str = feature_rename_dict[feature] \
+                if feature in feature_rename_dict else feature
+        else:
+            label_str = feature_labels[idx]
+
+        ax.scatter(x=1. / df_lasso_mean[col_alpha], y=df_lasso_mean[feature], 
+                   label=label_str,
                    marker='.', s=1)
 
-    plt.axvline(x=threshold_inv_alpha, color='darkred', linestyle='--')
-    fig_box = ax.get_position()
-    ax.set_position([fig_box.x0, fig_box.y0, fig_box.width * 0.8, fig_box.height])
-    ax.set_anchor('SW')
-    legend = ax.legend(loc='center left', bbox_to_anchor=(1.02, 0.5), markerscale=10, fontsize=10,
-                       labelcolor=feature_label_colors)
-    ax.set_xlim((0, x_max))
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.set_ylabel(r'mean $\beta_j$', fontsize=16, loc='center')
-    ax.tick_params(labelsize=14)
-    ax.set_xlabel(r'$\alpha^{-1}$', fontsize=16)
-    return fig, legend
+    if ax is None:
+        plt.axvline(x=threshold_inv_alpha, color='darkred', linestyle='--')
+        fig_box = ax.get_position()
+        ax.set_position([fig_box.x0, fig_box.y0, fig_box.width * 0.8, fig_box.height])
+        ax.set_anchor('SW')
+        legend = ax.legend(loc='center left', bbox_to_anchor=(1.02, 0.5), 
+                           markerscale=10, fontsize=10,
+                           labelcolor=feature_label_colors)
+        ax.set_xlim((0, x_max))
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_ylabel(r'mean $\beta_j$', fontsize=16, loc='center')
+        ax.tick_params(labelsize=14)
+        ax.set_xlabel(r'$\alpha^{-1}$', fontsize=16)
+
+        return fig, legend
+    
+    else:
+        return
+    
 
 def plot_pv_stock(df_stock, col_year, col_installations, col_stock):
     '''

@@ -7,6 +7,8 @@ that presents analysis of the diffusion of both pv and bev."""
 import os
 import sys
 
+from tqdm import tqdm
+
 import numpy as np
 import pandas as pd
 
@@ -33,7 +35,9 @@ from xai_green_tech_adoption.utils.utils import col_feature_count, ranking_mean_
     col_bev_per_vehicle, col_power_accum_pv, col_features, \
     col_idx_train, col_idx_val, col_idx_test, mean_r2_cv_test, col_mean_shap,\
     col_id_ma, col_name_ma, features_norm_to_population_ls, features_norm_drop_ls,\
-    col_predictions
+    col_predictions, col_alpha, col_r2_train, col_r2_test, col_l2_train, col_l2_test,\
+    col_mse_train, col_mse_test, col_mae_train, col_mae_test, col_mape_train, col_mape_test,\
+    col_count_non_zero, col_std_shap, col_occurences_feat
 
 
 from xai_green_tech_adoption.shap_analysis import plotting
@@ -699,7 +703,7 @@ def plot_mean_shap_features(feature_count_threshold_pv: int = 15,
         print("Figure for poster with hard coded height, fontsize and number of features shown.")
         fig_height = 10
         nr_features_shown = 15
-        laberlsize = 25
+        labelsize = 25
 
     [_, _, df_mean_shap_pv, _,
      _, _, df_mean_shap_bev, _] = get_reduced_model_features_n_shap(feature_count_threshold_pv, 
@@ -1335,6 +1339,299 @@ def plot_decomposed_shap_interactions_pv_and_bev(save_fig: bool = False,
     return
 
 
+def lasso_get_feature_list(df_lasso: pd.DataFrame):
+
+
+    feature_list = list(df_lasso.columns)
+    for col_no_feat in [
+        col_run_id,
+        col_alpha,
+        col_r2_train,
+        col_r2_test,
+        col_l2_train,
+        col_l2_test,
+        col_mse_train,
+        col_mse_test,
+        col_mae_train,
+        col_mae_test,
+        col_mape_train,
+        col_mape_test,
+    ]:
+        feature_list.remove(col_no_feat)
+
+
+    return feature_list
+
+
+def plot_performance_large_alpha(save_fig: bool = False, alpha_inv_max = 10100):
+    """Plot the performance for large alpha values indicated by mean R2 score, mean mae
+    and number of non-zero coefficients."""
+
+    # Load data
+    fpath_data = "data/output/benchmarking_lasso_large_alpha_norm.pklz"
+    df_lasso = pd.read_pickle(fpath_data, compression='gzip')
+
+    feature_list = lasso_get_feature_list(df_lasso)
+    df_lasso[col_count_non_zero] = (df_lasso[feature_list] != 0).sum(axis=1)
+    df_lasso_mean_perf = pd.DataFrame(df_lasso.groupby(by=col_alpha, 
+                                                       as_index=False).mean())
+    
+    # Plot
+    fig, ax = plt.subplots(3, 1, figsize=(8, 10), sharex='all')
+
+    plotting.plot_performance_lasso(df_lasso_mean_perf, 
+                                           perf_metric_train=col_r2_train,
+                                           perf_metric_test=col_r2_test, ax=ax[0],
+                                           x_max=alpha_inv_max)
+    
+    plotting.plot_performance_lasso(df_lasso_mean_perf, perf_metric_train=col_mae_train,
+                                             perf_metric_test=col_mae_test, ax=ax[1],
+                                             x_max=alpha_inv_max)
+    
+    plotting.plot_count_non_zero_coef(df_lasso_mean_perf, col_alpha,
+                                             x_max=alpha_inv_max, ax=ax[2],
+                                             color="#d95f02")
+    
+
+    # Aesthetics
+    ax[0].set_ylim(0.5, 0.9)
+    ax[1].set_ylim(0.1, 0.14)
+    ax[2].set_ylim(0, 170)
+
+
+    legend = ax[0].legend(numpoints=None, fontsize=20)
+    for leg_hdls in legend.legend_handles:
+        leg_hdls._sizes = [80]
+
+    ax[0].set_ylabel("mean $R^2$ score", size=20)
+    ax[1].set_ylabel("mean MAE", size=20)
+    ax[2].set_ylabel("number of features with\nnon-zero coefficients", size=20)
+    ax[-1].set_xlabel("$\\alpha^{-1}$", size=26)
+
+    for ax_r in ax:
+        ax_r.tick_params(labelsize=14)
+    
+
+    if save_fig:
+        fig_path = "plots/SI_lasso_performance_large_alpha.pdf"
+        fig.savefig(fig_path, bbox_inches='tight')
+
+        fig.clear()
+        plt.close(fig)
+
+    else:
+        plt.show()
+
+    return
+
+
+def plot_performance_and_coefficients_small_alpha(save_fig: bool = False, 
+                                                  alpha_inv_max: float = 44,
+                                                  threshold_inverse_alpha: int = 38):
+    """Plot the coefficients of the benchmark model that uses linear
+    regression."""
+
+    # Load data
+    fpath_data = "data/output/benchmarking_lasso_norm.pklz"
+    df_lasso = pd.read_pickle(fpath_data, compression='gzip')
+
+    feature_list = lasso_get_feature_list(df_lasso)
+    df_lasso[col_count_non_zero] = (df_lasso[feature_list] != 0).sum(axis=1)
+    df_lasso_mean_perf = pd.DataFrame(df_lasso.groupby(by=col_alpha, 
+                                                       as_index=False).mean())
+    
+    # Plot
+    fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex='all')
+    fig_coeff, ax_coeff = plt.subplots(figsize=(10, 6))
+
+    plotting.plot_performance_lasso(df_lasso_mean_perf, 
+                                           perf_metric_train=col_r2_train,
+                                           perf_metric_test=col_r2_test, ax=ax[0],
+                                           x_max=alpha_inv_max)
+
+    plotting.plot_count_non_zero_coef(df_lasso_mean_perf, col_alpha,
+                                             x_max=alpha_inv_max, ax=ax[1],
+                                             color="#d95f02")
+    
+
+    plotting.plot_mean_coefficients(df_lasso_mean_perf, feature_list=feature_list,
+                                    ax=ax_coeff, x_max=alpha_inv_max, 
+                                    threshold_inv_alpha=threshold_inverse_alpha, 
+                                    feature_rename_dict=rename_tick_dict)
+    
+    
+    
+    
+    for ax_r in ax:
+        ax_r.axvline(x=threshold_inverse_alpha, 
+                     color='darkred', linestyle='--', linewidth=2.)
+    #ax_coeff.axvline(x=threshold_inverse_alpha,
+    #                 color='darkred', linestyle='--', linewidth=2.)
+                     
+    # Aesthetics
+    ## Performance plot
+    legend = ax[0].legend(numpoints=None, fontsize=20)
+    for leg_hdls in legend.legend_handles:
+        leg_hdls._sizes = [80]
+
+    ax[0].set_ylabel("mean $R^2$ score", size=20)
+    ax[1].set_ylabel("number of features with\nnon-zero coefficients", size=20)
+    ax[-1].set_xlabel("$\\alpha^{-1}$", size=26)
+
+    for ax_r in ax:
+        ax_r.tick_params(labelsize=14)
+
+    ## Coeff. Plot
+    ax_coeff.set_ylabel("mean $\\beta_i$", size=26)
+    ax_coeff.set_xlabel("$\\alpha^{-1}$", size=26)
+    ax_coeff.tick_params(labelsize=14)
+    
+    # Legend outside plots
+    legend_coeff = ax_coeff.legend(numpoints=None, fontsize=10, bbox_to_anchor=(1.01, 1.05), 
+                   loc='upper left', markerscale=10)
+    
+    fig_coeff.tight_layout()
+    fig_coeff.subplots_adjust(right=0.725)
+    
+    
+    if save_fig:
+        fpath_fig = "plots/SI_lasso_performance_small_alpha.pdf"
+
+        plt.savefig(fpath_fig, bbox_inches='tight')
+        fig.clear()
+        plt.close(fig)
+
+        fpath_fig_coeff = "plots/SI_lasso_coefficients_small_alpha.pdf"
+        fig_coeff.savefig(fpath_fig_coeff, bbox_inches='tight')
+        fig_coeff.clear()
+        plt.close(fig_coeff)
+
+    else:
+        plt.show()
+
+
+    return
+    
+
+def plot_benchmark_shap_feature_importance(save_fig: bool = False, 
+                                           alpha_lasso: float = 0.026324,
+                                           normed: bool = True, 
+                                           labelsize: float = 18,
+                                           show_progress: bool = False):
+
+    fpath_lasso = "data/output/benchmarking_lasso_norm.pklz"
+    df_lasso = pd.read_pickle(fpath_lasso, 
+                              compression='gzip')
+    
+    unique_alphas = df_lasso[col_alpha].unique()
+    alpha_closest_idx =  np.argmin(abs(unique_alphas - alpha_lasso))
+    alpha_chosen = unique_alphas[alpha_closest_idx]
+
+    print(f"Wanted alpha={alpha_lasso}, " + 
+          f"chosen alpha={alpha_chosen} (diff: {alpha_chosen - alpha_lasso})")
+    
+    feature_list = lasso_get_feature_list(df_lasso)
+
+    # Load data
+    df_metadata = pd.read_csv("data/output/metadata_rfe_norm.csv", sep=";")
+    df_metadata = prepare_metadata_dataframe(df_metadata, ["indices_training_set", 
+                                                           "indices_val_set", 
+                                                           "indices_test_set"])
+    
+    df_data = pd.read_csv(df_metadata[col_file_path].unique()[0], sep=";")
+    df_data.loc[
+    df_data["mean distance public transport"].isin([np.inf, -np.inf]),
+    "mean distance public transport",
+                ] = df_data.loc[
+    ~df_data["mean distance public transport"].isin([np.inf, -np.inf]),
+    "mean distance public transport",
+    ].max()
+    if normed:
+        norm_ls = features_norm_to_population_ls
+        drop_ls = features_norm_drop_ls
+
+        df_data = df_data.drop(columns=drop_ls)
+
+        for feat_r in norm_ls:
+            feat_new = feat_r + "_per_capita"
+            df_data[feat_new] = df_data[feat_r] / df_data['population'].astype(float)
+            df_data.drop(columns=feat_r, inplace=True)
+
+    # Compute mean shap feature importance for all training-test-splits
+    df_mean_shap = pd.DataFrame()
+    df_std_shap = pd.DataFrame()
+
+    for split in tqdm(df_metadata[col_run_id], disable=not show_progress):
+        idx_train = df_metadata.loc[df_metadata[col_run_id] == split, col_idx_train].values[0]
+        idx_val = df_metadata.loc[df_metadata[col_run_id] == split, col_idx_val].values[0]
+
+
+
+        df_mean_split = pd.DataFrame(df_data[feature_list].iloc[idx_train + idx_val].mean()).T
+        df_std_split = pd.DataFrame(df_data[feature_list].iloc[idx_train + idx_val].std(ddof=0)).T
+
+        df_coef = df_lasso.loc[(df_lasso[col_alpha] == alpha_chosen) &
+                                (df_lasso[col_run_id] == split), feature_list,]
+        df_shap = df_coef.iloc[0] * ((df_data[feature_list] - df_mean_split.iloc[0]) / 
+                                     df_std_split.iloc[0])
+
+        # compute shap feature importances and std of abs of shap values
+        df_mean_shap_split = pd.DataFrame(df_shap.abs().mean(axis=0)).T
+        df_std_shap_split = pd.DataFrame(df_shap.abs().std(ddof=0, axis=0)).T
+        df_mean_shap = pd.concat([df_mean_shap, df_mean_shap_split])
+        df_std_shap = pd.concat([df_std_shap, df_std_shap_split])
+    
+    df_fi = pd.DataFrame(
+        {
+        col_mean_shap: df_mean_shap[feature_list].mean(axis=0),
+        col_std_shap: df_std_shap[feature_list].std(ddof=0, axis=0),
+        col_occurences_feat: df_mean_shap[feature_list].astype(bool).sum(axis=0),
+        }
+    )
+
+    df_fi = df_fi.loc[df_fi[col_mean_shap] != 0]
+    df_fi = df_fi.sort_values(col_mean_shap)
+    
+    # Plot
+
+    fig, ax = plt.subplots(figsize=(8, 10))
+
+    sm = plotting.bar_shap_feature_imp(df_fi, df_fi.index, ax=ax, cmap='viridis', 
+                                  xlabel="mean $|\\text{SHAP values}|$ [kWp/hh]")
+    
+    
+    
+    # Aesthetics
+    fig.tight_layout()
+
+    cax = fig.add_axes([.85, .425, 0.02 , .3])
+    cbar_ticks = np.array([1, 4, 7, 10]) 
+    cbar = fig.colorbar(sm, cax=cax, ticks=cbar_ticks + .5)
+    cbar.set_label('number feature occurs in runs', rotation=270, labelpad=25, size=labelsize,
+                   )
+    cbar.ax.tick_params(labelsize=labelsize *1.3)
+    cbar.ax.tick_params(which='minor', length=0)
+    cbar.set_ticklabels(cbar_ticks)
+
+    # Add cartoons
+    pv_image = Image.open(f"{__cartoon_path}/pv.png")
+    ax_pv_image = fig.add_axes([0.7, .1, 0.25, 0.25])
+    ax_pv_image.imshow(pv_image)
+    ax_pv_image.axis('off')
+
+    if save_fig:
+        fpath_fig = "plots/SI_lasso_shap_feature_importance.pdf"
+        fig.savefig(fpath_fig, bbox_inches='tight')
+
+        fig.clear()
+        plt.close(fig)
+
+    else:
+        plt.show()
+
+    return df_fi
+
+
 def plot_all_figures():
 
     use_normalized = True
@@ -1370,23 +1667,32 @@ def plot_all_figures():
     
 
     ## Appendix
-    # Figure A1: All feature dependencies PV
+    # Figure S1 + S2: All feature dependencies PV
     plot_all_dependencies_separate(feature_count_threshold_pv=15,
                                    feature_count_threshold_bev=15, 
                                    save_fig=True, run_evaluation=False, 
                                    use_normalized=use_normalized)
 
-    # Figure A2: Interaction heatmaps PV and BEV
+    # Figure S3: Interaction heatmaps PV and BEV
     plot_interaction_heatmaps_pv_and_bev(save_fig=True, run_evaluation=False,
                                          feature_count_threshold_pv=15, 
                                          feature_count_threshold_bev=15, 
                                          use_normalized=use_normalized)
 
-    # Figure A3: Decomposed SHAP interactions BEV
+    # Figure S4: Decomposed SHAP interactions BEV
     plot_decomposed_shap_interactions_pv_and_bev(save_fig=True, target_type='bev',
                                                  run_evaluation=False, 
                                                  feature_count_threshold_pv=15, 
                                                  feature_count_threshold_bev=15,
                                                  use_normalized=use_normalized)
+    
+    # SI Figure S5: Lasso performance for large alpha values
+    plot_performance_large_alpha(save_fig=True)
+
+    # SI Figure S6: Lasso performance and coefficients for small alpha values
+    plot_performance_and_coefficients_small_alpha(save_fig=True)
+
+    # SI Figure S7: Lasso SHAP feature importance
+    plot_benchmark_shap_feature_importance(save_fig=True)
 
     return
