@@ -26,8 +26,8 @@ from xai_green_tech_adoption.utils.utils import *
 from xai_green_tech_adoption.utils import post_to_mattermost
 
 
-def random_search_cv(train_set, val_set, param_intervals, n_iter, 
-                     early_stopping_rounds, k_splits, verbose):
+def random_search_cv(train_set: list, val_set: list, param_intervals: list, n_iter:int, 
+                     early_stopping_rounds: int, k_splits: int, verbose: int):
     '''
     Function performs n_iter rounds of random search for hyperparameter optimization (hpo) and returns the best model
     instance and a dataframe containing the hyperparameter values and performances of all rounds. The hyperparameters
@@ -44,6 +44,7 @@ def random_search_cv(train_set, val_set, param_intervals, n_iter,
     @param k_splits: number of folds of k-fold cross-validation
     @param verbose: verbose parameter used for fitting of LGBMRegressor indicating the performance on validation data
                     in every boosting step
+
     @return: model instance of the best hyperparameters trained on entire train_set data set and
              dataframe containing the hyperparameter values and performances for all rounds of the random search.
     '''
@@ -117,8 +118,11 @@ def random_search_cv(train_set, val_set, param_intervals, n_iter,
     return best_model, df_performances
 
 
-def iterate_rfe(train_set_original, val_set_original, param_intervals, n_hpo_iter,
-                    early_stopping_rounds, k_splits_cv, elimination_scheme, verbose):
+def iterate_rfe(train_set_original: tuple[np.ndarray, np.ndarray], 
+                val_set_original: tuple[np.ndarray, np.ndarray], 
+                param_intervals: dict, n_hpo_iter: int,
+                early_stopping_rounds: int, k_splits_cv: int, 
+                elimination_scheme: list[int , ...], verbose: int):
     '''
     Function performs Recursive Feature Elimination (RFE). In each iteration it calls random_search_cv() for
     hyperparameter optimization. It eliminates input features according to the scheme given by elimination_scheme and
@@ -133,6 +137,7 @@ def iterate_rfe(train_set_original, val_set_original, param_intervals, n_hpo_ite
     @param elimination_scheme: List of integers indicating how many input features should be eliminated in the
                                 iterations simultaneously.
     @param verbose: verbose parameter used during fitting of LGBMRegressor model (by random_search_cv())
+
     @return: Dataframe giving hyperparameter values and performances of all runs during hpo for all iterations of rfe,
                 i.e., the dataframe contains (len(elimination_scheme)+1)*n_hpo_iter rows.
     '''
@@ -178,7 +183,7 @@ def iterate_rfe(train_set_original, val_set_original, param_intervals, n_hpo_ite
 
 
 def repeat_rfe(file_path: str, test_size: float, validation_size: float, 
-               repetitions: int, param_intervals, n_hpo_iter: int,
+               repetitions: int, param_intervals: dict, n_hpo_iter: int,
                early_stopping_rounds: int, k_splits_cv: int, 
                elimination_scheme: list, label_cols: list, 
                target_feat, verbose, show_progress: bool = True,
@@ -199,6 +204,10 @@ def repeat_rfe(file_path: str, test_size: float, validation_size: float,
     @param label_cols: names of columns giving labels, i.e., name and RS of municipal associations
     @param target_feat: column name of the column giving the target feature
     @param verbose: verbose parameter used during fitting of LGBMRegressor model
+    @param show_progress: boolean indicating whether progress bar should be shown.
+    @param norm_ls: list of features to be normalized to population.
+    @param drop_ls: list of features to be dropped from the dataset.
+
     @return: df_perf: dataframe giving the results and performances of the simulation. One row gives the details for one
                         set of hyperparameters for a specific number of input features for a specific repetition. (The
                         dataframe has repetitions*(len(elimination scheme)+1)*n_hpo_iter entries.)
@@ -327,12 +336,10 @@ if __name__ == '__main__':
     n_jobs = -1
 
     early_stopping_rounds = 30
-
     verbose = -1
 
     # scheme to eliminate features during recursive feature elimination
     if target_type == 'pv':
-        #list_feat_to_elim = 11 * [10] + 9 * [5] + 15 * [2] + 12 * [1]
         list_feat_to_elim = 11 * [10] + 9 * [5] + 12 * [2] + (18 - len(drop_ls_in)) * [1]
         # file path of input data set
         file_path = 'data/input/input.csv'
@@ -340,7 +347,6 @@ if __name__ == '__main__':
         col_target = col_power_accum_pv
 
     elif target_type == 'bev':
-        #list_feat_to_elim = 11 * [10] + 9 * [5] + 15 * [2] + 13 * [1]
         list_feat_to_elim = 11 * [10] + 9 * [5] + 12 * [2] + (19 - len(drop_ls_in)) * [1] #to get to 15 features
         # file path of input data set
         file_path = 'data/input/bev_input.csv'
@@ -356,6 +362,7 @@ if __name__ == '__main__':
                                       label_cols=[col_id_ma, col_name_ma], 
                                       target_feat=col_target,verbose=verbose,
                                       norm_ls=norm_ls_in, drop_ls=drop_ls_in)
+    
     # file path on cluster
     out_path = 'data/output/'
     perf_path = out_path + 'results_rfe'
@@ -375,6 +382,6 @@ if __name__ == '__main__':
     df_metadata.to_csv(meta_path + bev_path_tmp + norm_path_tmp + '.csv', 
                        index=False, sep=';')
     if mattermost_url is not None:
-        dtime = (t_start - datetime.now()).total_seconds() / 3600
+        dtime = (t_start - datetime.now()).total_seconds() / 3600.
         message_to_post = 'RFE for ' + target_type + f' finished at {datetime.now()} (took {dtime} h)'
         post_to_mattermost.post_message(message_to_post, mattermost_url)
