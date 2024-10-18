@@ -871,7 +871,8 @@ def reduce_df_size(df, max_datapoints):
 
 def plot_mean_coefficients(df_lasso_mean: pd.DataFrame, feature_list: list, 
                            x_max: float = None, threshold_inv_alpha: float = None,
-                           ax: plt.axes=None, feature_rename_dict: dict = None):
+                           ax: plt.axes=None, feature_rename_dict: dict = None, 
+                           verbose: bool = False):
     '''
     Plotting mean coefficients of lasso models over the inverse of alpha.
     @param df_lasso_mean: Dataframe giving mean results and mean coefficients of all simulation runs. One row
@@ -886,10 +887,11 @@ def plot_mean_coefficients(df_lasso_mean: pd.DataFrame, feature_list: list,
     features_occurring_list = []
     min_inverse_alpha = []
     feature_label_colors_dict = {}
-    # get list of features that have non-zero coef for any value of inverse alpha displayed in plot
+    # get list of features that have non-zero coef for 
+    # any value of inverse alpha displayed in plot
     for feature in feature_list:
-        if (df_lasso_mean[feature] != 0).sum() != 0:
-            min_inverse_alpha_feat = 1 / df_lasso_mean.loc[(df_lasso_mean[feature] != 0) & (
+        if (df_lasso_mean[feature] != 0).any():
+            min_inverse_alpha_feat = 1. / df_lasso_mean.loc[(df_lasso_mean[feature] != 0) & (
                     df_lasso_mean[col_alpha] == df_lasso_mean.loc[
                 (df_lasso_mean[feature] != 0), col_alpha].max()), col_alpha].values[0]
             if min_inverse_alpha_feat <= x_max:
@@ -899,6 +901,9 @@ def plot_mean_coefficients(df_lasso_mean: pd.DataFrame, feature_list: list,
                     feature_label_colors_dict[feature] = 'black'
                 else:
                     feature_label_colors_dict[feature] = 'darkgray'
+
+        if verbose:
+            print(f"{feature}, min_inverse_alpha: {min_inverse_alpha_feat}")
 
     # sort features according to their order of appearance
     idx_sorted = np.argsort(min_inverse_alpha)
@@ -930,7 +935,8 @@ def plot_mean_coefficients(df_lasso_mean: pd.DataFrame, feature_list: list,
     color_map = plt.get_cmap('nipy_spectral')
 
     # set colors for ordered features
-    ax.set_prop_cycle('color', [color_map(idx / len(min_inverse_alpha)) for idx, _ in enumerate(min_inverse_alpha)])
+    ax.set_prop_cycle('color', [color_map(idx / len(min_inverse_alpha)) 
+                                for idx, _ in enumerate(min_inverse_alpha)])
 
     for idx, feature in enumerate(features_occurring_list):
         if feature_rename_dict is not None:
@@ -961,7 +967,7 @@ def plot_mean_coefficients(df_lasso_mean: pd.DataFrame, feature_list: list,
         return fig, legend
     
     else:
-        return
+        return feature_label_colors, feature_label_colors_dict
     
 
 def plot_pv_stock(df_stock, col_year, col_installations, col_stock):

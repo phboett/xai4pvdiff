@@ -1459,7 +1459,8 @@ def plot_performance_and_coefficients_small_alpha(save_fig: bool = False,
                                       color="#d95f02")
     
 
-    plotting.plot_mean_coefficients(df_lasso_mean_perf, feature_list=feature_list,
+    label_colors, color_dict = plotting.plot_mean_coefficients(df_lasso_mean_perf, 
+                                                   feature_list=feature_list,
                                     ax=ax_coeff, x_max=alpha_inv_max, 
                                     threshold_inv_alpha=threshold_inverse_alpha, 
                                     feature_rename_dict=rename_tick_dict)
@@ -1467,8 +1468,8 @@ def plot_performance_and_coefficients_small_alpha(save_fig: bool = False,
     for ax_r in ax:
         ax_r.axvline(x=threshold_inverse_alpha, 
                      color='darkred', linestyle='--', linewidth=2.)
-    #ax_coeff.axvline(x=threshold_inverse_alpha,
-    #                 color='darkred', linestyle='--', linewidth=2.)
+    ax_coeff.axvline(x=threshold_inverse_alpha,
+                     color='darkred', linestyle='--', linewidth=2.)
                      
     # Aesthetics
     ## Performance plot
@@ -1489,8 +1490,9 @@ def plot_performance_and_coefficients_small_alpha(save_fig: bool = False,
     ax_coeff.tick_params(labelsize=14)
     
     # Legend outside plots
-    legend_coeff = ax_coeff.legend(numpoints=None, fontsize=10, bbox_to_anchor=(1.01, 1.05), 
-                   loc='upper left', markerscale=10)
+    legend_coeff = ax_coeff.legend(numpoints=None, 
+                                   fontsize=10, bbox_to_anchor=(1.01, 1.05), 
+                   loc='upper left', markerscale=10, labelcolor=label_colors)
     
     fig_coeff.tight_layout()
     fig_coeff.subplots_adjust(right=0.725)
@@ -1511,7 +1513,7 @@ def plot_performance_and_coefficients_small_alpha(save_fig: bool = False,
         fig.clear()
         plt.close(fig)
 
-        fpath_fig_coeff = "plots/SI_lasso_coefficients_small_alpha.pdf"
+        fpath_fig_coeff = f"plots/SI_lasso_coefficients_small_alpha_invalphathres{threshold_inverse_alpha}.pdf"
         fig_coeff.savefig(fpath_fig_coeff, bbox_inches='tight')
         fig_coeff.clear()
         plt.close(fig_coeff)
@@ -1520,7 +1522,7 @@ def plot_performance_and_coefficients_small_alpha(save_fig: bool = False,
         plt.show()
 
 
-    return
+    return df_lasso_mean_perf, label_colors, color_dict
     
 
 def plot_benchmark_shap_feature_importance(save_fig: bool = False, 
