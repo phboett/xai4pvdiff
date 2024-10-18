@@ -22,8 +22,10 @@ from xai_green_tech_adoption.shap_analysis.supporting_functions import *
 from datetime import datetime
 
 
-def lasso_simulation(df, col_target_feature, train_sets, test_sets, 
-                     alpha_range, show_progress: bool = True, max_iter: int = 20000):
+def lasso_simulation(df: pd.DataFrame, col_target_feature: str, 
+                     train_sets: dict, test_sets: dict, 
+                     alpha_range: list, 
+                     show_progress: bool = True, max_iter: int = 20000):
     '''
     For each value of alpha contained in the list alpha_range a lasso model is trained and tested.
     @param df: dataset of input features and target feature
@@ -34,7 +36,7 @@ def lasso_simulation(df, col_target_feature, train_sets, test_sets,
                         each split
     @param alpha_range: list of alpha values. A lasso model is created, trained and tested for each value of alpha.
     @param show_progress: if True, progress bar is shown
-    @param max_iter: maximum number of iterations for lasso model
+    @param max_iter: maximum number of allowed iterations for lasso model
 
     @return: Dataframe with number of training-test splits, value of alpha, coefficients for all input features and values of
                 performance evaluation metrics
