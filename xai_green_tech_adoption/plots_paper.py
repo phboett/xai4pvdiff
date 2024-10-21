@@ -76,7 +76,7 @@ rename_tick_dict = {'employees with academic qualification': 'employees with aca
                         'global radiation': 'global radiation [kWh/m²]',
                         'income tax': 'income tax [€ p.c.]',}
 
-def load_performance_and_metadata_dataframes(use_normalized: bool = False):
+def load_performance_and_metadata_dataframes(use_normalized: bool = True):
 
     norm_str = ""
     if use_normalized:
@@ -132,8 +132,22 @@ def get_details_about_best_model(df_perf: pd.DataFrame, df_metadata: pd.DataFram
                                  model_dict: dict,
                                  split_id_best_model: int,
                                  feature_count_threshold: int,
-                                 use_normalized: bool = False):
-    
+                                 use_normalized: bool = False) -> list:
+    """Get detailed information about the model given by by 'split_id_best_model'.
+
+    Args:
+        df_perf (pd.DataFrame): _description_
+        df_metadata (pd.DataFrame): _description_
+        model_dict (dict): _description_
+        split_id_best_model (int): _description_
+        feature_count_threshold (int): _description_
+        use_normalized (bool, optional): _description_. Defaults to False.
+
+    Returns:
+        list: Features of the reduced model, the reduced model,
+             SHAP values and SHAP interaction values.
+    """
+
     df_data = pd.read_csv(df_metadata[col_file_path].unique()[0], sep=";")
     if use_normalized:
         norm_ls = features_norm_to_population_ls
@@ -853,18 +867,35 @@ def get_reduced_model_features_n_shap(feature_count_threshold_pv,
             X_red_model_bev, shap_values_bev, df_mean_shap_bev, interaction_values_bev]
 
 
-def plot_dependency_pv_and_bev(feature_count_threshold_pv=15,
-                              feature_count_threshold_bev=15, 
-                              save_fig=False, nr_best_features=4,
-                              run_evaluation=False, use_normalized=True,
-                              poster_version=False):
-    """Plot 2 by 4 with depency plot in the best model."""
+def plot_dependency_pv_and_bev(feature_count_threshold_pv: int = 15,
+                              feature_count_threshold_bev: int=15, 
+                              save_fig: bool = False, nr_best_features: int = 4, 
+                              sort_method: str = "model", run_evaluation: bool = False, use_normalized: bool = True,
+                              poster_version: bool = False):
+    """Plot 2 by 4 with depency plot in the best model.
+
+    Args:
+        feature_count_threshold_pv (int, optional): Number of features in reduced model for pv. Defaults to 15.
+        feature_count_threshold_bev (int, optional): Number of features in reduced model for pv. Defaults to 15.
+        save_fig (bool, optional): If 'True', save figure. Defaults to False.
+        nr_best_features (int, optional): Number of best features shown. Defaults to 4.
+        run_evaluation (bool, optional): if 'True', run the evaluation again. Defaults to False.
+        use_normalized (bool, optional): If 'True', run the version with additionally normalized to
+        population features. Defaults to True.
+        poster_version (bool, optional): if 'True', change figure sizes to produce a figure
+        for a poster. Defaults to False.
+    """
+
+    if sort_method not in ["mean", "model"]:
+        raise IOError("sort_method must be either 'mean' or 'model'.")
 
     [X_red_model_pv, shap_values_pv, df_mean_shap_pv, _,
-    X_red_model_bev, shap_values_bev, df_mean_shap_bev, _] = get_reduced_model_features_n_shap(feature_count_threshold_pv, 
+     X_red_model_bev, shap_values_bev, df_mean_shap_bev, _] = get_reduced_model_features_n_shap(feature_count_threshold_pv, 
                                                                                             feature_count_threshold_bev, 
                                                                                             run_evaluation,
                                                                                             use_normalized=use_normalized)
+
+    #return X_red_model_pv, shap_values_pv
 
     # Plot
     fig, [ax_pv, ax_bev] = plt.subplots(2, nr_best_features, 
@@ -873,12 +904,20 @@ def plot_dependency_pv_and_bev(feature_count_threshold_pv=15,
 
     ## PV row
     ## Choose list of best features
-    ranking_features_pv = df_mean_shap_pv.loc[:, 
-                                              col_mean_shap].drop(mean_r2_cv_test, 
+    if sort_method == "mean":
+        ranking_features_pv = df_mean_shap_pv.loc[:, 
+                                                  col_mean_shap].drop(mean_r2_cv_test, 
                                                                   axis=0)
+        assert np.diff(ranking_features_pv.values).min() >= 0, "Not sorted."
+        sorted_feature_list_pv = list(ranking_features_pv.index)[::-1]
+        
+    elif sort_method == "model":
+        sort_idx_shap = np.argsort(np.mean(abs(shap_values_pv), axis=0))
+        sorted_feature_list_pv = list(X_red_model_pv.columns[sort_idx_shap])[::-1]
+        
     count_plotted = 0
 
-    for feat_r in list(ranking_features_pv.index)[::-1]:
+    for feat_r in sorted_feature_list_pv:
         if feat_r in X_red_model_pv.columns:
             xlabel_feat = rename_tick_dict[feat_r] if feat_r in rename_tick_dict else feat_r
             plotting.dependence_plot(X_red_model_pv, shap_values_pv,
@@ -896,12 +935,20 @@ def plot_dependency_pv_and_bev(feature_count_threshold_pv=15,
             break
 
     ## BEV row
-    ranking_features_bev = df_mean_shap_bev.loc[:, 
-                                              col_mean_shap].drop(mean_r2_cv_test, 
+    if sort_method == "mean":
+        ranking_features_bev = df_mean_shap_bev.loc[:, 
+                                                  col_mean_shap].drop(mean_r2_cv_test, 
                                                                   axis=0)
+        assert np.diff(ranking_features_bev.values).min() >= 0, "Not sorted."
+        sorted_feature_list_bev = list(ranking_features_bev.index)[::-1]
+        
+    elif sort_method == "model":
+        sort_idx_shap = np.argsort(np.mean(abs(shap_values_bev), axis=0))
+        sorted_feature_list_bev = list(X_red_model_bev.columns[sort_idx_shap])[::-1]
+
     count_plotted = 0
 
-    for feat_r in list(ranking_features_bev.index)[::-1]:
+    for feat_r in  sorted_feature_list_bev:
         if feat_r in X_red_model_bev.columns:
             xlabel_feat = rename_tick_dict[feat_r] if feat_r in rename_tick_dict else feat_r
             plotting.dependence_plot(X_red_model_bev, shap_values_bev,
@@ -941,13 +988,20 @@ def plot_dependency_pv_and_bev(feature_count_threshold_pv=15,
     ax_car_image.imshow(car_image)
     ax_car_image.axis('off')
 
-    
+
     if save_fig:
+        
+        if sort_method == "mean":
+            fpath_postfix = "_mean"
+
+        elif sort_method == "model":
+            fpath_postfix = "_model"
+
         if poster_version:
-            fig_path = "plots/dependency_plots_pv_and_bev_poster.png"
+            fig_path = f"plots/dependency_plots_pv_and_bev_poster{fpath_postfix}.png"
             fig.savefig(fig_path, bbox_inches='tight', transparent=True)
         else:
-            fig_path = "plots/dependency_plots_pv_and_bev.pdf"
+            fig_path = f"plots/dependency_plots_pv_and_bev{fpath_postfix}.pdf"
             fig.savefig(fig_path, bbox_inches='tight')
 
         fig.clear()
@@ -959,18 +1013,30 @@ def plot_dependency_pv_and_bev(feature_count_threshold_pv=15,
     return
 
 
-def plot_all_dependencies_separate(feature_count_threshold_pv=15,
-                                   feature_count_threshold_bev=15,
-                                   save_fig=False, run_evaluation=False,
-                                   labelsize=16, use_normalized=True):
-    """Plot shap values over the feature values for all features of the best number."""
+def plot_all_dependencies_separate(feature_count_threshold_pv: int = 15,
+                                   feature_count_threshold_bev: int = 15,
+                                   save_fig: bool = False, run_evaluation: bool = False,
+                                   labelsize: float=16., use_normalized: bool = True):
+    """Plot shap values over the feature values for all features of the best number.
+
+    Args:
+        feature_count_threshold_pv (int, optional): Number of features used for the reduced 
+            pv model. Defaults to 15.
+        feature_count_threshold_bev (int, optional): Number of features used for the reduced 
+            bev model. Defaults to 15.
+        save_fig (bool, optional): If 'True', save figure. Defaults to False.
+        run_evaluation (bool, optional): If 'True' the evaluation is run again. Defaults to False.
+        labelsize (float, optional): Fontsize of figure labels. Defaults to 16..
+        use_normalized (bool, optional): If 'True', use version where remaining features 
+            where normed to population. Defaults to True.
+    """
 
 
     [X_red_model_pv, shap_values_pv, _, _,
-    X_red_model_bev, shap_values_bev, _, _] = get_reduced_model_features_n_shap(feature_count_threshold_pv, 
-                                                                                feature_count_threshold_bev, 
-                                                                                run_evaluation,
-                                                                                use_normalized=use_normalized)
+     X_red_model_bev, shap_values_bev, _, _] = get_reduced_model_features_n_shap(feature_count_threshold_pv, 
+                                                                                 feature_count_threshold_bev, 
+                                                                                 run_evaluation,
+                                                                                 use_normalized=use_normalized)
     
     # Plot
     ## PV
@@ -980,6 +1046,7 @@ def plot_all_dependencies_separate(feature_count_threshold_pv=15,
     remainder_pv = len(mean_shap_red_pv) % 5
     if remainder_pv > 0:
         fig_cols_pv += 1
+
     fig_pv, ax_arr_pv = plt.subplots(fig_cols_pv, 5, 
                                  figsize=(20, 4 * fig_cols_pv),                    
                                  sharey='all')
@@ -1057,13 +1124,13 @@ def plot_all_dependencies_separate(feature_count_threshold_pv=15,
     ax_car_image.axis('off')
 
     if save_fig:
-        fig_path = "plots/all_dependency_best_model_pv.pdf"
+        fig_path = "plots/all_dependency_best_model_pv_model.pdf"
         fig_pv.savefig(fig_path, bbox_inches='tight')
 
         fig_pv.clear()
         plt.close(fig_pv)
 
-        fig_path = "plots/all_dependency_best_model_bev.pdf"
+        fig_path = "plots/all_dependency_best_model_bev_model.pdf"
         fig_bev.savefig(fig_path, bbox_inches='tight')
 
         fig_bev.clear()
@@ -1079,7 +1146,18 @@ def plot_interaction_heatmaps_pv_and_bev(feature_count_threshold_pv: int = 15,
                                     feature_count_threshold_bev:int =15, 
                                     save_fig=False, run_evaluation=False, 
                                     use_normalized=True):
+    """Plot heatmap of interatction shap interaction values for both pv and bev for
+    the best performing model with 'feature_count_threshold-...' features.
 
+    Args:
+        feature_count_threshold_pv (int, optional): Number of features of the 
+            reduced pv model. Defaults to 15.
+        feature_count_threshold_bev (int, optional): Number of features of the 
+            reduced pv model. Defaults to 15.
+        save_fig (bool, optional): If 'True', save figure. Defaults to False.
+        run_evaluation (bool, optional): If 'True' . Defaults to False.
+        use_normalized (bool, optional): _description_. Defaults to True.
+    """
 
     # Load data
 
@@ -1088,13 +1166,12 @@ def plot_interaction_heatmaps_pv_and_bev(feature_count_threshold_pv: int = 15,
                                                                                             feature_count_threshold_bev, 
                                                                                             run_evaluation, use_normalized=use_normalized)
     
+    #return X_red_model_pv, interaction_values_pv
     mean_pv_interactions = np.mean(abs(interaction_values_pv), axis=0)
     mean_bev_interactions = np.mean(abs(interaction_values_bev), axis=0)
 
     # Plot
     fig, [ax_pv, ax_bev] = plt.subplots(1, 2, figsize=(30, 10))
-
-    # Delete the diagonal
 
     plotting.heatmap_interactions(X_red_model_pv, interaction_values_pv, ax=ax_pv, 
                                   feature_name_dict=rename_tick_dict, plot_cbar=True,
@@ -1105,8 +1182,6 @@ def plot_interaction_heatmaps_pv_and_bev(feature_count_threshold_pv: int = 15,
                                   feature_name_dict=rename_tick_dict, plot_cbar=True,
                                   fontsize=13, remove_diagonal=True, scalefactor_cbar=100.,
                                   cbar_label='mean $|\\text{SHAP interaction value}|$ [\\%]')
-
-    # Remove the diagonal
 
     fig.tight_layout()    
 
