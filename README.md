@@ -79,4 +79,9 @@ In order to plot the maps, we need additional data.
 The folder *maps* gives geographic data of municipalities (the data source is provided in table above) and the folder *intermediate_data* contains a mapping *mapping_municipalities_2000_2019.csv* used to map municipalities identified by their AGS key to the respective municipal associations identified by their ARS key. 
 The mapping takes into account all changes in AGS between 2000 and 2019 (data source: see table).
 
+## Contributors
+
+- Dorothea Kistinger 
+- Philipp C. Böttcher ([Orcid]())
+
 

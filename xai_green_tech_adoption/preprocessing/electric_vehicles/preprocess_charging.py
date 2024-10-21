@@ -57,7 +57,7 @@ def create_GeoDataFrame_from_charging_stations() -> gpd.GeoDataFrame:
     df_bnetz['point'] = [Point(lon, lat) for lon, lat in zip(df_bnetz['Längengrad'], 
                                                              df_bnetz['Breitengrad'])]
 
-    gdf_bnetz = gpd.GeoDataFrame(df_bnetz, geometry='point')#TODO do i need to specify crs??, crs='EPSG:4326') -> No, it is not necessary
+    gdf_bnetz = gpd.GeoDataFrame(df_bnetz, geometry='point')
     gdf_bnetz.rename_geometry('WKT', inplace=True)
 
     return gdf_bnetz
@@ -124,7 +124,6 @@ def aggregate_charging_stations_different_years(gdf_mapped: gpd.GeoDataFrame,
     df_bnetz_grouped = pd.DataFrame({col_id_ma:[]}).set_index(col_id_ma)
 
     for year_r in tqdm(year_range, desc='Aggreg. per year'):
-        # TODO date correct like this or 12, 31?
         time_threshold = dt.datetime(year_r, 1, 1)
 
         mask_time = gdf_mapped['Inbetriebnahme'] <= time_threshold

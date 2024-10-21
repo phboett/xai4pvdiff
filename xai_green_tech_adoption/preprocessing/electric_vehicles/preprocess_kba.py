@@ -47,7 +47,6 @@ def preprocess_kba(save_data: bool = True,
                    value = [0.0, float('NaN')], 
                    inplace = True)
     
-    # TODO explicitly set dtypes needed? I think not!
     # Generate ARS values
     ars_col = (df_kba['ars_land'] + df_kba['ars_rb'] + 
                df_kba['ars_kreis'] + df_kba['ars_vb'])

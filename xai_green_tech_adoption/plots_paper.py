@@ -208,7 +208,6 @@ def plot_map_distribution_pv_and_bev(save_fig: bool = False,
 
     # Load dictionary connecting ars to wkt coordinates
     if map_type == "GEM":
-        # TODO str or int for ARS and AGS... one not both
         gdf_bund = gpd.read_file("data/maps/VG250_GEM.shp", 
                                  decimal=',', encoding='UTF-8',
                                  dtype={'AGS': int, 'ARS': int})
@@ -332,7 +331,6 @@ def plot_separate_parts_method_figure(save_fig: bool = False,
     #df_data_pv[col_id_ma] = df_data_pv[col_id_ma].str.pad(9, fillchar="0")
     
     # Target + Input Map
-    # TODO str or int for ARS and AGS... one not both
     gdf_bund = gpd.read_file("data/maps/VG250_GEM.shp", 
                                 decimal=',', encoding='UTF-8',
                                 dtype={'AGS': int, 'ARS': int})
@@ -386,7 +384,7 @@ def plot_separate_parts_method_figure(save_fig: bool = False,
     
     model_dict_pv, df_mean_shap_pv = get_fitted_models_and_mean_shap_values(df_perf_pv, df_meta_pv,
                                                                             feature_count_threshold_pv, col_power_accum_pv)
-    # TODO is this the df_mean_shap the same? It is, right?
+    
     [X_red_model_pv, shap_values_pv, _, interaction_values_pv,
      _, _, _, _] = get_reduced_model_features_n_shap(feature_count_threshold_pv=15, 
                                                      feature_count_threshold_bev=15, 
