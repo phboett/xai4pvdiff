@@ -995,7 +995,7 @@ def plot_dependency_pv_and_bev(feature_count_threshold_pv: int = 15,
             fpath_postfix = "_mean"
 
         elif sort_method == "model":
-            fpath_postfix = "_model"
+            fpath_postfix = ""
 
         if poster_version:
             fig_path = f"plots/dependency_plots_pv_and_bev_poster{fpath_postfix}.png"
@@ -1124,13 +1124,13 @@ def plot_all_dependencies_separate(feature_count_threshold_pv: int = 15,
     ax_car_image.axis('off')
 
     if save_fig:
-        fig_path = "plots/all_dependency_best_model_pv_model.pdf"
+        fig_path = "plots/all_dependency_best_model_pv.pdf"
         fig_pv.savefig(fig_path, bbox_inches='tight')
 
         fig_pv.clear()
         plt.close(fig_pv)
 
-        fig_path = "plots/all_dependency_best_model_bev_model.pdf"
+        fig_path = "plots/all_dependency_best_model_bev.pdf"
         fig_bev.savefig(fig_path, bbox_inches='tight')
 
         fig_bev.clear()
