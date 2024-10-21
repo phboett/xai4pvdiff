@@ -47,10 +47,12 @@ Note, that the photovolatic preprocessing is run first, since this prepares most
 - *prepare_input_data.ipynb*
 
 After these scripts were run, the input file for the XAI analysis of the PV adoption (`input.csv`) is placed in `data/input/`. It contains both features and target for the subsequent analysis.
+Following, this the data for the analysis of BEV is appended. The methods needed for this analysis can be found in [preprocessing/electric_vehicles](./xai_green_tech_adoption/preprocessing/electric_vehicles/). 
+The script `merge_all_preprocessed.py` in this folder contains the meta function to perform the preprocessing for BEVs. These scripts create the file `bev_input.csv` in the aforementioned folder.
+Due to the renaming, fusion and splitting up of municipal association during different years, these changes had to be identified, and the resulting knowledge was used in the preprocessing.  
 
-Following, this the data for the analysis of BEV is appended. The methods needed for this analysis can be found in [preprocessing/electric_vehicles](./xai_green_tech_adoption/preprocessing/electric_vehicles/). The script `merge_all_preprocessed.py` in this folder contains the meta function to perform the preprocessing for BEVs. These scripts create the file `bev_input.csv` in the aforementioned folder.
-
-The preprocessed input data can be found online under this [link](https://fz-juelich.sciebo.de/s/PbhS1ucZslnF8Je). The folders in this zip-archive should be placed in `data/`.
+The preprocessed input data and raw data, as well as the output data, can be found online under this [link](https://fz-juelich.sciebo.de/s/PbhS1ucZslnF8Je). 
+The folders in this zip-archive should be placed in `data/`.
 
 
 ## XAI Analysis
