@@ -32,7 +32,7 @@ def create_GeoDataFrame_from_charging_stations() -> gpd.GeoDataFrame:
     ## Charging stations
     df_bnetz = pd.read_excel(os.path.join(__raw_data_path, 
                                           'bnetza', 
-                                          'BNetzA_chargingstations.xlsx'), 
+                                          'BNetzA_chargingstations.xls'), 
                              header=10, converters={'Postleitzahl': str})
     col_to_keep = ['Betreiber', 'Straße', 'Hausnummer', 'Adresszusatz', 'Postleitzahl',
                    'Ort', 'Bundesland', 'Kreis/kreisfreie Stadt', 'Breitengrad',
@@ -57,7 +57,7 @@ def create_GeoDataFrame_from_charging_stations() -> gpd.GeoDataFrame:
     df_bnetz['point'] = [Point(lon, lat) for lon, lat in zip(df_bnetz['Längengrad'], 
                                                              df_bnetz['Breitengrad'])]
 
-    gdf_bnetz = gpd.GeoDataFrame(df_bnetz, geometry='point')#TODO do i need to specify crs??, crs='EPSG:4326')
+    gdf_bnetz = gpd.GeoDataFrame(df_bnetz, geometry='point')#TODO do i need to specify crs??, crs='EPSG:4326') -> No, it is not necessary
     gdf_bnetz.rename_geometry('WKT', inplace=True)
 
     return gdf_bnetz
@@ -166,7 +166,7 @@ def preprocess_charging_stations(include_autobahn: bool = False,
 
     # Some could not be mapped automatically and were mapped by hand
     df_manual_ars = pd.read_excel(os.path.join(__raw_data_path,'bnetza', 
-                                               'manual_changes_bnetza.xlsx'),
+                                               'manual_changes_bnetza.xls'),
                                     dtype = {'ARS_land':str, 'ARS_rb':str, 
                                            'ARS_kreis':str, 'ARS_gv':str, 
                                            'plz':'str'})
@@ -192,7 +192,7 @@ def preprocess_charging_stations(include_autobahn: bool = False,
 
     # Add Gemeindename from file
     df_verbund = pd.read_excel(os.path.join(__raw_data_path, 
-                                            "ars_to_gemeindeverbund.xlsx"), 
+                                            "ars_to_gemeindeverbund.xls"), 
                                converters={'ars': str})
     dict_ars_gemeindeverbund = {ars_value: gemeindeverbund_value for ars_value, 
                             gemeindeverbund_value in zip(df_verbund.ars, 

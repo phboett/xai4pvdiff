@@ -34,7 +34,7 @@ def preprocess_kba(save_data: bool = True,
 
     # Load data where the ARS has been added
     df_kba = pd.read_excel(os.path.join(__raw_data_path, 'kba',
-                                        'fz27_202404_with_ars.xlsx'), 
+                                        'fz27_202404_with_ars.xls'), 
                                         header=0, 
                            sheet_name='processed', dtype={'ars_land': str, 
                                                           'ars_rb': str, 
@@ -70,7 +70,7 @@ def preprocess_kba(save_data: bool = True,
     
     # Load mapping table that connects ars and names
     df_verbund = pd.read_excel(os.path.join(__raw_data_path, 
-                                            "ars_to_gemeindeverbund.xlsx"), 
+                                            "ars_to_gemeindeverbund.xls"), 
                                converters={'ars': str})
     dict_ars_gemeindeverbund = {ars_value: gemeindeverbund_value for ars_value, 
                                 gemeindeverbund_value in zip(df_verbund.ars, 

@@ -104,7 +104,7 @@ def map_to_common_ars(df_in: pd.DataFrame, sheet_name: str,
     df_internal = df_in.copy()
 
     fpath_in = os.path.join(__raw_data_path , 
-                            "bev_manual_changes.xlsx")
+                            "bev_manual_changes.xls")
     
     # Drop the ones that are not needed according to the mapping table
     df_drop = pd.read_excel(fpath_in, sheet_name="discard", 
