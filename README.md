@@ -81,7 +81,7 @@ The mapping takes into account all changes in AGS between 2000 and 2019 (data so
 
 ## Contributors
 
-- Dorothea Kistinger 
-- Philipp C. Böttcher ([Orcid]())
+- Dorothea Kistinger ([Orcid](https://orcid.org/0009-0005-7127-1494))
+- Philipp C. Böttcher ([Orcid](https://orcid.org/0000-0002-3240-0442))
 
 
