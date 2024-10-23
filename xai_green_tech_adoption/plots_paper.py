@@ -1595,11 +1595,11 @@ def plot_performance_and_coefficients_small_alpha(save_fig: bool = False,
         plt.show()
 
 
-    return df_lasso_mean_perf, label_colors, color_dict
+    return
     
 
 def plot_benchmark_shap_feature_importance(save_fig: bool = False, 
-                                           alpha_lasso: float = 0.026324,
+                                           alpha_lasso: float = 1./38.,#0.026324,
                                            normed: bool = True, 
                                            labelsize: float = 18,
                                            show_progress: bool = False):
@@ -1613,7 +1613,7 @@ def plot_benchmark_shap_feature_importance(save_fig: bool = False,
     alpha_chosen = unique_alphas[alpha_closest_idx]
 
     print(f"Wanted alpha={alpha_lasso}, " + 
-          f"chosen alpha={alpha_chosen} (diff: {alpha_chosen - alpha_lasso})")
+          f"chosen alpha={alpha_chosen} (alpha_inv:{1./alpha_chosen:.8f}, diff: {alpha_chosen - alpha_lasso})")
     
     feature_list = lasso_get_feature_list(df_lasso)
 
